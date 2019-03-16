@@ -19,7 +19,7 @@
 
 
 
-function! mtdataapi#dumpobj(header, obj) abort
+function! mtdataapi#dumpobj(showlist, header, obj) abort
   let l:ret = ""
 
   if type( a:obj ) == 0
@@ -29,18 +29,12 @@ function! mtdataapi#dumpobj(header, obj) abort
   elseif type( a:obj ) == 3
     let l:ret .=  a:header . " " . " #:array" . "\n"
     for i in a:obj
-      let l:ret .= mtdataapi#dumpobj( a:header . "#" , i ) 
+      let l:ret .= mtdataapi#dumpobj( a:showlist , a:header . "#" , i ) 
     endfor
   elseif type( a:obj ) == 4
-    " let invisible = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
-    " top level
-    let visible = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" , "excerpt" , "body" ]
-    " second level
-    let visible += [ "label" ]"
-
 
     let viewlist = []
-    for v in visible
+    for v in a:showlist
       if match( keys( a:obj ) , v ) >= 0
         call add(viewlist, v)
       endif
@@ -48,7 +42,7 @@ function! mtdataapi#dumpobj(header, obj) abort
 
     for k in viewlist
       let l:ret .=  a:header . " " . k . " #:dictionary" . "\n"
-      let l:ret .= mtdataapi#dumpobj( a:header . "#" , a:obj[k] ) 
+      let l:ret .= mtdataapi#dumpobj( a:showlist , a:header . "#" , a:obj[k] ) 
     endfor
   else
     echo "ERROR: ??? " . type( a:obj ) . a.obj
@@ -56,8 +50,40 @@ function! mtdataapi#dumpobj(header, obj) abort
   return l:ret
 endfunction
 
-function! mtdataapi#get() abort
-  let res = webapi#http#get( "https://www.sei-yo.jp/blog/mt-data-api.cgi/v4/sites/8/entries" , { "limit": "1" } )
+function! mtdataapi#dumpdetail( header, obj) abort
+  " let invisible = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
+  " top level
+  let visible = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" , "excerpt" , "body" ]
+  " second level
+  let visible += [ "label" ]"
+  return mtdataapi#dumpobj( visible , a:header , a:obj )
+endfunction
+
+function! mtdataapi#dumpsummary( header, obj) abort
+  " top level
+  let visible = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" ]
+  " second level
+  let visible += [ "label" ]"
+  return mtdataapi#dumpobj( visible , a:header , a:obj )
+endfunction
+
+function! mtdataapi#get( target ) abort
+  let siteid=8
+  let dataapiurl="https://www.sei-yo.jp/blog/mt-data-api.cgi"
+  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  let l:param = {"limit": "1"}
+  if a:target == "latest"
+    " do nothing. use default param"
+  elseif a:target == "recent"
+    let l:param["limit"] = 50
+  elseif type( a:target ) == 0
+    let dataapiendpoint .= "/" . a:target
+    let l:param = {}
+  else
+    echo "ERROR: in argument check"
+  endif
+
+  let res = webapi#http#get( dataapiurl . dataapiendpoint , l:param )
   " echo res
   " echo res.status
   " echo res.message
@@ -72,7 +98,11 @@ function! mtdataapi#get() abort
   " echo "jsonobj.items[0]"
   " echo jsonobj.items[0]
 
-  let data = mtdataapi#dumpobj( "#" , jsonobj.items[0] )
+  if type( a:target ) == 0
+    let data = mtdataapi#dumpdetail( "#" , jsonobj )
+  else
+    let data = mtdataapi#dumpsummary( "#" , jsonobj.items)
+  endif
   execute ":normal ggdGa" . data
 
 endfunction
