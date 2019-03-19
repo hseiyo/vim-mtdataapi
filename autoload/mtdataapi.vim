@@ -1,3 +1,6 @@
+let s:sessionId = 0
+
+
   " for create post
   " entry={"excerpt" ,"status" ,"allowComments" ,"body" ,"keywords" ,"allowTrackbacks" ,"basename" ,"title" ,"more" ,"customFields" }
   " entry={
@@ -67,9 +70,16 @@ function! mtdataapi#dumpsummary( header, obj) abort
   return mtdataapi#dumpobj( visible , a:header , a:obj )
 endfunction
 
+function! mtdataapi#dumpauth( header, obj) abort
+  " top level
+  let visible = [ "accessToken" , "sessionId" , "expiresIn" , "remember" ]
+  return mtdataapi#dumpobj( visible , a:header , a:obj )
+endfunction
+
+
 function! mtdataapi#get( target ) abort
-  let siteid=8
-  let dataapiurl="https://www.sei-yo.jp/blog/mt-data-api.cgi"
+  let siteid=g:mt_siteid
+  let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
   let l:param = {"limit": "1"}
   if a:target == "latest"
@@ -83,7 +93,9 @@ function! mtdataapi#get( target ) abort
     echo "ERROR: in argument check"
   endif
 
-  let res = webapi#http#get( dataapiurl . dataapiendpoint , l:param )
+
+  call s:updateAccessToken()
+  let res = webapi#http#get( dataapiurl . dataapiendpoint , l:param , s:accessToken ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   " echo res
   " echo res.status
   " echo res.message
@@ -104,7 +116,48 @@ function! mtdataapi#get( target ) abort
     let data = mtdataapi#dumpsummary( "#" , jsonobj.items)
   endif
   execute ":normal ggdGa" . data
-
 endfunction
 
+function! s:auth() abort
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/authentication"
+  let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": "mt_dataapi" , "remember": "1" }
+  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param )
+  " echo res
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
+  let jsonobj = webapi#json#decode(res.content)
+  let s:accessToken = jsonobj.accessToken
+  let s:sessionId = jsonobj.sessionId
+
+  " let data = mtdataapi#dumpdetail( "#" , jsonobj )
+  " execute ":normal ggdGa" . data
+endfunction
+
+function! s:getNewToken() abort
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/token"
+  let l:param = {"clientId": "mt_dataapi" }
+  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
+  " echo res
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
+  let jsonobj = webapi#json#decode(res.content)
+  let s:accessToken = jsonobj.accessToken
+
+  " let data = mtdataapi#dumpdetail( "#" , jsonobj )
+  " execute ":normal ggdGa" . data
+endfunction
+
+function! s:updateAccessToken() abort
+  if s:sessionId
+    call s:getNewToken()
+  else
+    call s:auth()
+  endif
+endfunction
 
