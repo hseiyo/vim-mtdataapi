@@ -1,28 +1,74 @@
 let s:sessionId = 0
 
+"""""""""""" fields """"""""""""""
+" individual entry
+" let invisibleFields = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
+" top level
+let s:entryFields = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" , "excerpt" , "body" ]
+" second level
+let s:entryFields += [ "label" ]"
 
-  " for create post
-  " entry={"excerpt" ,"status" ,"allowComments" ,"body" ,"keywords" ,"allowTrackbacks" ,"basename" ,"title" ,"more" ,"customFields" }
-  " entry={
-  "       \ "excerpt" : "We are excited to announce that Six Apar-",
-  "       \ "status" : "Publish",
-  "       \ "allowComments" : true,
-  "       \ "body" : "¥u003cp¥u003e¥u003cspan¥u003eWe are excited to announce that Six Apart has acquired Topics, a dynamic online publishing product. This offering will provide Six Apart customers with an easy and cost-effective way to adapt existing content to evolving digital platforms.¥u003c/span¥u003e¥u003c/p¥u003e¥n¥u003cp¥u003e¥u003cspan¥u003eThis new product will save Six Apart customers a significant amount of time and money by allowing users to upgrade their websites and applications without migrating from their current content management systems. Clients who need to scale large amounts of data or even revamp a website on an entirely new platform can now achieve these changes with minimal effort.¥u003c/span¥u003e¥u003c/p¥u003e¥n¥u003cp¥u003e¥u003cspan¥u003eSix Apart customers will benefit not only from saved time and money, but also from ease of use. Topics does not have a user interface, so there is no new software to learn. Instead, it exists as a middle layer between the data library and the published page - automatically gathering, organizing and redistributing data.¥u003c/span¥u003e¥u003c/p¥u003e",
-  "       \ "keywords" : "",
-  "       \ "allowTrackbacks" : false,
-  "       \ "basename" : "six_apart_acquires_topics_server_to_simplify_site_upgrades",
-  "       \ "title" : "Six Apart Acquires Topics Server to Simplify Site Upgrades",
-  "       \ "more" : "",
-  "       \ "customFields" : [
-  "       \ {"basename" : "place",
-  "       \ "value" : "New York City"},
-  "       \ {"basename" : "agenda",
-  "       \ "value" : "Movable Type¥nTopics"}]
-  "       \ }
+"
+" entries
+" top level
+let s:summaryFields = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" ]
+" second level
+let s:summaryFields += [ "label" ]"
+
+"
+" tokens
+" top level
+" let s:authFields = [ "accessToken" , "sessionId" , "expiresIn" , "remember" ]
+
+"""""""""""""""""""""""""""""""""
+
+  function! s:auth() abort
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/authentication"
+  let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": "mt_dataapi" , "remember": "1" }
+  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param )
+  " echo "in auth()"
+  " echo res
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
+  let jsonobj = webapi#json#decode(res.content)
+  let s:accessToken = jsonobj.accessToken
+  let s:sessionId = jsonobj.sessionId
+
+  " let data = s:dumpdetail( "#" , jsonobj )
+  " execute ":normal ggdGa" . data
+endfunction
+
+function! s:getNewToken() abort
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/token"
+  let l:param = {"clientId": "mt_dataapi" }
+  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
+  " echo "in getNewToken()"
+  " echo res
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
+  let jsonobj = webapi#json#decode(res.content)
+  let s:accessToken = jsonobj.accessToken
+
+  " let data = s:dumpdetail( "#" , jsonobj )
+  " execute ":normal ggdGa" . data
+endfunction
+
+function! s:updateAccessToken() abort
+  if s:sessionId
+    call s:getNewToken()
+  else
+    call s:auth()
+  endif
+endfunction
 
 
-
-function! mtdataapi#dumpobj(showlist, header, obj) abort
+function! s:dumpobj(showlist, header, obj) abort
   let l:ret = ""
 
   if type( a:obj ) == 0
@@ -32,7 +78,7 @@ function! mtdataapi#dumpobj(showlist, header, obj) abort
   elseif type( a:obj ) == 3
     let l:ret .=  a:header . " " . " #:array" . "\n"
     for i in a:obj
-      let l:ret .= mtdataapi#dumpobj( a:showlist , a:header . "#" , i ) 
+      let l:ret .= s:dumpobj( a:showlist , a:header . "#" , i )
     endfor
   elseif type( a:obj ) == 4
 
@@ -45,37 +91,13 @@ function! mtdataapi#dumpobj(showlist, header, obj) abort
 
     for k in viewlist
       let l:ret .=  a:header . " " . k . " #:dictionary" . "\n"
-      let l:ret .= mtdataapi#dumpobj( a:showlist , a:header . "#" , a:obj[k] ) 
+      let l:ret .= s:dumpobj( a:showlist , a:header . "#" , a:obj[k] )
     endfor
   else
     echo "ERROR: ??? " . type( a:obj ) . a.obj
   endif
   return l:ret
 endfunction
-
-function! mtdataapi#dumpdetail( header, obj) abort
-  " let invisible = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
-  " top level
-  let visible = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" , "excerpt" , "body" ]
-  " second level
-  let visible += [ "label" ]"
-  return mtdataapi#dumpobj( visible , a:header , a:obj )
-endfunction
-
-function! mtdataapi#dumpsummary( header, obj) abort
-  " top level
-  let visible = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" ]
-  " second level
-  let visible += [ "label" ]"
-  return mtdataapi#dumpobj( visible , a:header , a:obj )
-endfunction
-
-function! mtdataapi#dumpauth( header, obj) abort
-  " top level
-  let visible = [ "accessToken" , "sessionId" , "expiresIn" , "remember" ]
-  return mtdataapi#dumpobj( visible , a:header , a:obj )
-endfunction
-
 
 function! mtdataapi#get( target ) abort
   let siteid=g:mt_siteid
@@ -111,53 +133,64 @@ function! mtdataapi#get( target ) abort
   " echo jsonobj.items[0]
 
   if type( a:target ) == 0
-    let data = mtdataapi#dumpdetail( "#" , jsonobj )
+    let data = s:dumpobj( s:entryFields , "#" , jsonobj )
   else
-    let data = mtdataapi#dumpsummary( "#" , jsonobj.items)
+    let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
   endif
   execute ":normal ggdGa" . data
 endfunction
 
-function! s:auth() abort
+function! s:readBuffer() abort
+  let l:hash = {}
+  let l:retstr = ""
+  let l:lastlineno = line("$")
+
+  call cursor(1,1)
+  for f in s:entryFields
+    let l:pos = search( "^# " . f . " #" , 'nW' , len( s:entryFields ) * 2 )
+    if l:pos > 0
+      if f == "body"
+        let l:hash[ f ] = join( getline( l:pos + 1 , line("$") ) , "\n" )
+      else
+        " set next line
+        let l:hash[ f ] = getline( l:pos + 1 )
+      endif
+    endif
+  endfor
+  for k in keys(l:hash )
+    let l:retstr .= k . "=" . l:hash[k] . "&"
+  endfor
+  let l:retstr = substitute( l:retstr , "&$" , "" , "")
+  return l:retstr
+
+ endfunction
+
+function! mtdataapi#createEntry( ) abort
+  let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/authentication"
-  let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": "mt_dataapi" , "remember": "1" }
-  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param )
-  " echo res
+  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  " let l:param = {}
+  let l:entryBody =  s:readBuffer()
+  let l:param = "entry={" . webapi#http#encodeURI(l:entryBody) . "}&publish=1"
+  " echo l:param
+
+  call s:updateAccessToken()
+  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  echo res
   " echo res.status
   " echo res.message
   " echo res.header
   " echo res.content
   let jsonobj = webapi#json#decode(res.content)
-  let s:accessToken = jsonobj.accessToken
-  let s:sessionId = jsonobj.sessionId
+  " echo jsonobj
+  " echo jsonobj.totalResults
+  " echo "jsonobj.items"
+  " echo jsonobj.items
 
-  " let data = mtdataapi#dumpdetail( "#" , jsonobj )
-  " execute ":normal ggdGa" . data
-endfunction
+  " echo "jsonobj.items[0]"
+  " echo jsonobj.items[0]
 
-function! s:getNewToken() abort
-  let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/token"
-  let l:param = {"clientId": "mt_dataapi" }
-  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
-  " echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
-  let jsonobj = webapi#json#decode(res.content)
-  let s:accessToken = jsonobj.accessToken
-
-  " let data = mtdataapi#dumpdetail( "#" , jsonobj )
-  " execute ":normal ggdGa" . data
-endfunction
-
-function! s:updateAccessToken() abort
-  if s:sessionId
-    call s:getNewToken()
-  else
-    call s:auth()
-  endif
+  let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+  execute ":normal ggdGa" . data
 endfunction
 
