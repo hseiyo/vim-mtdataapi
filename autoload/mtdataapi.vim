@@ -146,28 +146,45 @@ function! mtdataapi#get( target ) abort
   execute ":normal ggdGa" . data
 endfunction
 
+function! s:str2dict(ind, val ) abort
+  let l:a = split( a:val , ":" )
+  " l:a[0] is "id"
+  " l:a[1] is a number as id
+  " l:a[2] is a label string that is ignored here.
+  let l:d = { l:a[0]: l:a[1] }
+  return l:d
+endfunction
+
 function! s:readBuffer() abort
   let l:hash = {}
   let l:retstr = ""
   let l:lastlineno = line("$")
 
-  call cursor(1,1)
   for f in s:entryFields
-    let l:pos = search( "^# " . f . " #" , 'nW' , len( s:entryFields ) * 2 )
+    call cursor(1,1)
+    let l:pos = search( "^# " . f . " #" , 'cnW' , len( s:entryFields ) * 2 )
     if l:pos > 0
       if f == "body"
         let l:hash[ f ] = join( getline( l:pos + 1 , line("$") ) , "\n" )
+      elseif f == "categories"
+        call cursor( l:pos + 2 , 1 )
+        echo getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
+        let l:hash[ f ] = map( getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
+        echo "categories::::"
+        echo l:hash[ f]
+      elseif f == "tags"
+        call cursor( l:pos + 2 , 1 )
+        let l:hash[ f ] = getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
+        echo "tags::::"
+        echo l:hash[ f]
       else
         " set next line
         let l:hash[ f ] = getline( l:pos + 1 )
       endif
     endif
   endfor
-  for k in keys(l:hash )
-    let l:retstr .= k . "=" . l:hash[k] . "&"
-  endfor
-  let l:retstr = substitute( l:retstr , "&$" , "" , "")
-  return l:retstr
+
+  return l:hash
 
  endfunction
 
@@ -177,11 +194,46 @@ function! mtdataapi#createEntry( ) abort
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
   " let l:param = {}
   let l:entryBody =  s:readBuffer()
-  let l:param = "entry={" . s:Http.encodeURI(l:entryBody) . "}&publish=1"
-  " echo l:param
+  let l:param = s:Json.encode( l:entryBody )
+  let l:param = { "entry": l:param , "publish": "1" }
 
   call s:updateAccessToken()
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  " echo res
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
+  let jsonobj = s:Json.decode(res.content)
+  " echo jsonobj
+  " echo jsonobj.totalResults
+  " echo "jsonobj.items"
+  " echo jsonobj.items
+
+  " echo "jsonobj.items[0]"
+  " echo jsonobj.items[0]
+
+  let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+  execute ":normal ggdGa" . data
+endfunction
+
+function! mtdataapi#editEntry( ) abort
+  let siteid=g:mt_siteid
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  " let l:param = {}
+  let l:entryBody =  s:readBuffer()
+  if has_key( l:entryBody , "id" )
+    let dataapiendpoint .= "/" . l:entryBody["id"]
+    unlet l:entryBody["id"]
+    let l:entryBody["__method"] = "PUT"
+  endif
+  let l:param = s:Json.encode( l:entryBody )
+  let l:param = { "entry": l:param , "publish": "1" }
+
+  echo dataapiurl . dataapiendpoint
+  call s:updateAccessToken()
+  let res = s:Http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
   echo res
   " echo res.status
   " echo res.message
