@@ -1,5 +1,11 @@
 let s:sessionId = 0
 
+" for Vital.vim
+let s:V = vital#mtdataapi#new()
+let s:Http = s:V.import("Web.HTTP")
+let s:Json = s:V.import("Web.JSON")
+
+
 """""""""""" fields """"""""""""""
 " individual entry
 " let invisibleFields = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
@@ -26,14 +32,14 @@ let s:summaryFields += [ "label" ]"
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/authentication"
   let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": "mt_dataapi" , "remember": "1" }
-  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param )
+  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param )
   " echo "in auth()"
   " echo res
   " echo res.status
   " echo res.message
   " echo res.header
   " echo res.content
-  let jsonobj = webapi#json#decode(res.content)
+  let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
   let s:sessionId = jsonobj.sessionId
 
@@ -45,14 +51,14 @@ function! s:getNewToken() abort
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/token"
   let l:param = {"clientId": "mt_dataapi" }
-  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
+  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
   " echo "in getNewToken()"
   " echo res
   " echo res.status
   " echo res.message
   " echo res.header
   " echo res.content
-  let jsonobj = webapi#json#decode(res.content)
+  let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
 
   " let data = s:dumpdetail( "#" , jsonobj )
@@ -117,13 +123,13 @@ function! mtdataapi#get( target ) abort
 
 
   call s:updateAccessToken()
-  let res = webapi#http#get( dataapiurl . dataapiendpoint , l:param , s:accessToken ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   " echo res
   " echo res.status
   " echo res.message
   " echo res.header
   " echo res.content
-  let jsonobj = webapi#json#decode(res.content)
+  let jsonobj = s:Json.decode(res.content)
   " echo jsonobj
   " echo jsonobj.totalResults
   " echo "jsonobj.items"
@@ -171,17 +177,17 @@ function! mtdataapi#createEntry( ) abort
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
   " let l:param = {}
   let l:entryBody =  s:readBuffer()
-  let l:param = "entry={" . webapi#http#encodeURI(l:entryBody) . "}&publish=1"
+  let l:param = "entry={" . s:Http.encodeURI(l:entryBody) . "}&publish=1"
   " echo l:param
 
   call s:updateAccessToken()
-  let res = webapi#http#post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   echo res
   " echo res.status
   " echo res.message
   " echo res.header
   " echo res.content
-  let jsonobj = webapi#json#decode(res.content)
+  let jsonobj = s:Json.decode(res.content)
   " echo jsonobj
   " echo jsonobj.totalResults
   " echo "jsonobj.items"
