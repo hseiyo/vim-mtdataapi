@@ -2,6 +2,8 @@
 
 This is vim plugin for Movable Type.
 
+[![Powered by vital.vim](https://img.shields.io/badge/powered%20by-vital.vim-80273f.svg)](https://github.com/vim-jp/vital.vim)
+
 # Commands
 There are several commands.
 
