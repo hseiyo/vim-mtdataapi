@@ -224,15 +224,10 @@ function! s:readBuffer() abort
         let l:hash[ f ] = join( getline( l:pos + 1 , line("$") ) , "\n" )
       elseif f == "categories"
         call cursor( l:pos + 1 , 1 )
-        echo getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
         let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
-        echo "categories::::"
-        echo l:hash[ f]
       elseif f == "tags"
         call cursor( l:pos + 1 , 1 )
         let l:hash[ f ] = getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
-        echo "tags::::"
-        echo l:hash[ f]
       else
         " set next line
         let l:hash[ f ] = getline( l:pos + 1 )
@@ -283,7 +278,6 @@ function! mtdataapi#editEntry( ) abort
   let l:param = s:Json.encode( l:entryBody )
   let l:param = { "entry": l:param , "publish": "1" }
 
-  echo dataapiurl . dataapiendpoint
   call s:updateAccessToken()
   let res = s:Http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
   if res.status != 200
