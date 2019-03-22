@@ -7,6 +7,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:sessionId = 0
+let s:clientId = "mt_dataapi"
 
 " for Vital.vim
 let s:V = vital#mtdataapi#new()
@@ -39,44 +40,45 @@ let s:summaryFields += [ "label" ]"
   function! s:auth() abort
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/authentication"
-  let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": "mt_dataapi" , "remember": "1" }
+  let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": s:clientId , "remember": "1" }
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param )
-  " echo "in auth()"
-  " echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
+  if res.status != 200
+    echo "in s:auth(), got status: " . res.status . " with messages followings"
+    echo res.content
+    " echo res.status
+    " echo res.message
+    " echo res.header
+    " echo res.content
+    return
+  endif
   let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
   let s:sessionId = jsonobj.sessionId
 
-  " let data = s:dumpdetail( "#" , jsonobj )
-  " execute ":normal ggdGa" . data
 endfunction
 
 function! s:getNewToken() abort
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/token"
-  let l:param = {"clientId": "mt_dataapi" }
-  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , "X-MT-Authorization: MTAuth sessionId=" . s:sessionId")
-  " echo "in getNewToken()"
-  " echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
+  let l:param = {"clientId": s:clientId }
+  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
+    echo res.content
+    " echo res.status
+    " echo res.message
+    " echo res.header
+    " echo res.content
+    return
+  endif
+
   let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
 
-  " let data = s:dumpdetail( "#" , jsonobj )
-  " execute ":normal ggdGa" . data
 endfunction
 
 function! s:updateAccessToken() abort
-  if s:sessionId
-    echo "session id:"
-    echo s:sessionId
+  if s:sessionId != ""
     call s:getNewToken()
   else
     call s:auth()
@@ -149,7 +151,7 @@ function! s:dumpobj(showlist, header, obj) abort
   return l:ret
 endfunction
 
-function! mtdataapi#get( target ) abort
+function! mtdataapi#getEntry( target ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
@@ -160,19 +162,29 @@ function! mtdataapi#get( target ) abort
     let l:param = {"limit": "50"}
   elseif type( a:target ) == 0
     let dataapiendpoint .= "/" . a:target
-    let l:param = {}
+    " let l:param = {}
   else
     echo "ERROR: in argument check"
   endif
 
 
   call s:updateAccessToken()
-  let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-  " echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
+
+  let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echo "in s:mtdataapi#getEntry(), got status: " . res.status . " with messages followings"
+    echo "url: " . dataapiurl . dataapiendpoint
+    echo "access token: " . s:accessToken
+    echo "session id: " . s:sessionId
+    " echo res.message
+    echo res.content
+    " echo res.status
+    " echo res.message
+    " echo res.header
+    " echo res.content
+    return
+  endif
+
   let jsonobj = s:Json.decode(res.content)
   " echo jsonobj
   " echo jsonobj.totalResults
@@ -183,8 +195,9 @@ function! mtdataapi#get( target ) abort
   " echo jsonobj.items[0]
 
   if type( a:target ) == 0
-    " let data = s:dumpobj( s:entryFields , "#" , jsonobj )
     let data = s:dumpEntry( jsonobj )
+  elseif a:target == "latest"
+    let data = s:dumpEntry( jsonobj.items[0] )
   else
     let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
   endif
@@ -194,9 +207,8 @@ endfunction
 function! s:str2dict(ind, val ) abort
   let l:a = split( a:val , ":" )
   " l:a[0] is "id"
-  " l:a[1] is a number as id
-  " l:a[2] is a label string that is ignored here.
-  let l:d = { l:a[0]: l:a[1] }
+  " l:a[1] is a label string that is ignored here.
+  let l:d = { "id": l:a[0] }
   return l:d
 endfunction
 
@@ -212,14 +224,14 @@ function! s:readBuffer() abort
       if f == "body"
         let l:hash[ f ] = join( getline( l:pos + 1 , line("$") ) , "\n" )
       elseif f == "categories"
-        call cursor( l:pos + 2 , 1 )
-        echo getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
-        let l:hash[ f ] = map( getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
+        call cursor( l:pos + 1 , 1 )
+        echo getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
+        let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
         echo "categories::::"
         echo l:hash[ f]
       elseif f == "tags"
-        call cursor( l:pos + 2 , 1 )
-        let l:hash[ f ] = getline( l:pos + 2 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
+        call cursor( l:pos + 1 , 1 )
+        let l:hash[ f ] = getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
         echo "tags::::"
         echo l:hash[ f]
       else
@@ -244,21 +256,18 @@ function! mtdataapi#createEntry( ) abort
 
   call s:updateAccessToken()
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-  " echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
+  if res.status != 200
+    echo "in s:mtdataapi#createEntry(), got status: " . res.status . " with messages followings"
+    echo res.content
+    " echo res.status
+    " echo res.message
+    " echo res.header
+    " echo res.content
+    return
+  endif
+
   let jsonobj = s:Json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo "jsonobj.items"
-  " echo jsonobj.items
-
-  " echo "jsonobj.items[0]"
-  " echo jsonobj.items[0]
-
-  let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+  let data = s:dumpEntry( jsonobj )
   execute ":normal ggdGa" . data
 endfunction
 
@@ -266,7 +275,6 @@ function! mtdataapi#editEntry( ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  " let l:param = {}
   let l:entryBody =  s:readBuffer()
   if has_key( l:entryBody , "id" )
     let dataapiendpoint .= "/" . l:entryBody["id"]
@@ -279,21 +287,18 @@ function! mtdataapi#editEntry( ) abort
   echo dataapiurl . dataapiendpoint
   call s:updateAccessToken()
   let res = s:Http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
-  echo res
-  " echo res.status
-  " echo res.message
-  " echo res.header
-  " echo res.content
+  if res.status != 200
+    echo "in s:mtdataapi#editEntry(), got status: " . res.status . " with messages followings"
+    echo res.content
+    " echo res.status
+    " echo res.message
+    " echo res.header
+    " echo res.content
+    return
+  endif
+
   let jsonobj = s:Json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo "jsonobj.items"
-  " echo jsonobj.items
-
-  " echo "jsonobj.items[0]"
-  " echo jsonobj.items[0]
-
-  let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+  let data = s:dumpEntry( jsonobj )
   execute ":normal ggdGa" . data
 endfunction
 
