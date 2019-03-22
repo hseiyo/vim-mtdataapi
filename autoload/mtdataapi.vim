@@ -155,14 +155,13 @@ function! mtdataapi#getEntry( target ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  let lparam ={}
   if a:target == "latest"
     let l:param = {"limit": "1"}
   elseif a:target == "recent"
     let l:param = {"limit": "50"}
   elseif type( a:target ) == 0
     let dataapiendpoint .= "/" . a:target
-    " let l:param = {}
+    let l:param = {}
   else
     echo "ERROR: in argument check"
   endif
