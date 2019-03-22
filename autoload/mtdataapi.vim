@@ -67,11 +67,47 @@ endfunction
 
 function! s:updateAccessToken() abort
   if s:sessionId
+    echo "session id:"
+    echo s:sessionId
     call s:getNewToken()
   else
     call s:auth()
   endif
 endfunction
+
+function! s:dumpEntry( obj) abort
+  let l:ret = ""
+
+  if type( a:obj ) != 4
+    echo "ERROR: argument: obj is not dictionary"
+    echo obj
+    return
+  endif
+
+  let viewlist = []
+  for v in s:entryFields 
+    if match( keys( a:obj ) , v ) >= 0
+      call add(viewlist, v)
+    endif
+  endfor
+
+  for k in viewlist
+    let l:ret .=  "# " . k . " #\n"
+    if k == "categories"
+      for category in a:obj[k]
+        let l:ret .= category.id . ":" . category.label . "\n"
+      endfor
+    elseif k == "tags"
+      for tags in a:obj[k]
+        let l:ret .= tags . "\n"
+      endfor
+    else
+      let l:ret .= a:obj[k] . "\n"
+    endif
+  endfor
+  return l:ret
+endfunction
+
 
 
 function! s:dumpobj(showlist, header, obj) abort
@@ -109,11 +145,11 @@ function! mtdataapi#get( target ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  let l:param = {"limit": "1"}
+  let lparam ={}
   if a:target == "latest"
-    " do nothing. use default param"
+    let l:param = {"limit": "1"}
   elseif a:target == "recent"
-    let l:param["limit"] = 50
+    let l:param = {"limit": "50"}
   elseif type( a:target ) == 0
     let dataapiendpoint .= "/" . a:target
     let l:param = {}
@@ -139,7 +175,8 @@ function! mtdataapi#get( target ) abort
   " echo jsonobj.items[0]
 
   if type( a:target ) == 0
-    let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+    " let data = s:dumpobj( s:entryFields , "#" , jsonobj )
+    let data = s:dumpEntry( jsonobj )
   else
     let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
   endif
