@@ -5,9 +5,9 @@ This is vim plugin for Movable Type.
 # Commands
 There are several commands.
 
-MtGet
-MtEdit
-MtCreate
+- MtGet
+- MtEdit
+- MtCreate
 
 # Usage
 ## MtGet
