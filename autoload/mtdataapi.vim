@@ -1,3 +1,11 @@
+" Vim global plugin for Movable Type
+" File:         mtdataapi.vim
+" Author:	Seiyo Hiramatsu <hseiyo@gmail.com>
+" License:	MIT License
+
+let s:save_cpo = &cpo
+set cpo&vim
+
 let s:sessionId = 0
 
 " for Vital.vim
@@ -289,3 +297,5 @@ function! mtdataapi#editEntry( ) abort
   execute ":normal ggdGa" . data
 endfunction
 
+let &cpoptions = s:save_cpo
+unlet s:save_cpo
