@@ -157,6 +157,7 @@ function! s:dumpobj(showlist, header, obj) abort
 endfunction
 
 function! mtdataapi#getEntry( target ) abort
+  set paste
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
