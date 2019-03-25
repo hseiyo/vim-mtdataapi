@@ -63,6 +63,11 @@ function! s:getNewToken() abort
   let l:param = {"clientId": s:clientId }
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   if res.status != 200
+    if res.status == 401
+      s:sessionId = ""
+      call s:updateAccessToken()
+      return
+    endif
     echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
     echo res.content
     " echo res.status
