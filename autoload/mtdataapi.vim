@@ -116,6 +116,8 @@ function! s:dumpEntry( obj) abort
       for tags in a:obj[k]
         let l:ret .= tags . "\n"
       endfor
+    elseif k == "body"
+      let l:ret .= system( 'pandoc -f html -t markdown' , a:obj[k] ) . "\n"
     else
       let l:ret .= a:obj[k] . "\n"
     endif
@@ -227,7 +229,8 @@ function! s:readBuffer() abort
     let l:pos = search( "^# " . f . " #" , 'cnW' , len( s:entryFields ) * 2 )
     if l:pos > 0
       if f == "body"
-        let l:hash[ f ] = join( getline( l:pos + 1 , line("$") ) , "\n" )
+        let l:body = join( getline( l:pos + 1 , line("$") ) , "\n" )
+        let l:hash[ f ] = system( 'pandoc -f markdown -t html' , l:body )
       elseif f == "categories"
         call cursor( l:pos + 1 , 1 )
         let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
