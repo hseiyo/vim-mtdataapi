@@ -17,18 +17,17 @@ let s:Json = s:V.import("Web.JSON")
 
 """""""""""" fields """"""""""""""
 " individual entry
-" let invisibleFields = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
+" let invisibleFields = [ "more" , "trackbackCount" , "customFields" , "updatable" , "assets" , "allowTrackbacks" , "comments" , "author" , "commentCount" , "createdDate" , "modifiedDate" , "date", "pingsSentUrl" , "allowComments" , "trackbacks" , "class" , "blog"]
 " top level
-let s:entryFields = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" , "excerpt" , "body" ]
+let s:entryFields = [ "id" , "status" , "permalink" ,"basename" , "categories" , "keywords" , "tags" , "modifiedDate", "title" , "excerpt" , "body" ]
 " second level
 let s:entryFields += [ "label" ]"
 
 "
 " entries
 " top level
-let s:summaryFields = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "createdDate" , "modifiedDate" , "date", "title" ]
-" second level
-let s:summaryFields += [ "label" ]"
+let s:summaryFields = [ "id" , "status" , "permalink" , "title" ]
+let s:detailFields = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "modifiedDate" , "title" ]
 
 "
 " tokens
@@ -64,9 +63,10 @@ function! s:getNewToken() abort
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   if res.status != 200
     if res.status == 401
-      s:sessionId = ""
-      call s:updateAccessToken()
-      return
+      if s:sessionId = ""
+      	call s:updateAccessToken()
+      	return
+			endif
     endif
     echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
     echo res.content
@@ -117,7 +117,7 @@ function! s:dumpEntry( obj) abort
         let l:ret .= tags . "\n"
       endfor
     elseif k == "body"
-      let l:ret .= system( 'pandoc -f html -t markdown' , a:obj[k] ) . "\n"
+      let l:ret .= system( 'pandoc -f html -t markdown' , a:obj[k] )
     else
       let l:ret .= a:obj[k] . "\n"
     endif
@@ -126,6 +126,43 @@ function! s:dumpEntry( obj) abort
 endfunction
 
 
+function! s:dumpSummary( list, obj ) abort
+  let l:ret = ""
+
+  if type( a:obj ) != 3
+    echo "ERROR: argument: obj is not array"
+    echo obj
+    return
+  endif
+
+  for ent in a:obj
+  	for k in a:list
+  	  if k == "categories"
+				let l:ret .= k . "\n"
+  	    for category in ent[k]
+  	      let l:ret .= category.id . ":" . category.label . "\n"
+  	    endfor
+  	  elseif k == "tags"
+				let l:ret .= k . "\n"
+  	    for tags in ent[k]
+  	      let l:ret .= tags . "\n"
+  	    endfor
+  	  else
+  	    let l:ret .= k . ": " . ent[k] . "\n"
+  	  endif
+  	endfor
+		let l:ret .= "\n"
+	endfor
+  return l:ret
+endfunction
+
+function! s:dumpSummaryDetail( obj ) abort
+	return s:dumpSummary( s:detailFields, a:obj )
+endfunction
+
+function! s:dumpSummarySimple( obj ) abort
+	return s:dumpSummary( s:summaryFields, a:obj )
+endfunction
 
 function! s:dumpobj(showlist, header, obj) abort
   let l:ret = ""
@@ -167,6 +204,10 @@ function! mtdataapi#getEntry( target ) abort
     let l:param = {"limit": "1"}
   elseif a:target == "recent"
     let l:param = {"limit": "50"}
+  elseif a:target == "simple"
+    let l:param = {"limit": "50"}
+  elseif a:target == "detail"
+    let l:param = {"limit": "50"}
   elseif type( a:target ) == 0
     let dataapiendpoint .= "/" . a:target
     let l:param = {}
@@ -205,10 +246,16 @@ function! mtdataapi#getEntry( target ) abort
     let data = s:dumpEntry( jsonobj )
   elseif a:target == "latest"
     let data = s:dumpEntry( jsonobj.items[0] )
+  elseif a:target == "simple"
+    let data = s:dumpSummarySimple( jsonobj.items)
+  elseif a:target == "detail"
+    let data = s:dumpSummaryDetail( jsonobj.items)
   else
-    let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
+    " let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
+    let data = s:dumpSummarySimple( jsonobj.items)
   endif
   execute ":normal ggdGa" . data
+  execute ":normal gg"
 endfunction
 
 function! s:str2dict(ind, val ) abort
