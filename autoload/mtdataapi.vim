@@ -36,7 +36,7 @@ let s:detailFields = [ "id" , "status" , "permalink" , "categories" , "keywords"
 
 """""""""""""""""""""""""""""""""
 
-  function! s:auth() abort
+function! s:auth() abort
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/authentication"
   let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": s:clientId , "remember": "1" }
@@ -64,9 +64,9 @@ function! s:getNewToken() abort
   if res.status != 200
     if res.status == 401
       if s:sessionId = ""
-      	call s:updateAccessToken()
-      	return
-			endif
+        call s:updateAccessToken()
+        return
+      endif
     endif
     echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
     echo res.content
@@ -136,32 +136,32 @@ function! s:dumpSummary( list, obj ) abort
   endif
 
   for ent in a:obj
-  	for k in a:list
-  	  if k == "categories"
-				let l:ret .= k . "\n"
-  	    for category in ent[k]
-  	      let l:ret .= category.id . ":" . category.label . "\n"
-  	    endfor
-  	  elseif k == "tags"
-				let l:ret .= k . "\n"
-  	    for tags in ent[k]
-  	      let l:ret .= tags . "\n"
-  	    endfor
-  	  else
-  	    let l:ret .= k . ": " . ent[k] . "\n"
-  	  endif
-  	endfor
-		let l:ret .= "\n"
-	endfor
+    for k in a:list
+      if k == "categories"
+        let l:ret .= k . "\n"
+        for category in ent[k]
+          let l:ret .= category.id . ":" . category.label . "\n"
+        endfor
+      elseif k == "tags"
+        let l:ret .= k . "\n"
+        for tags in ent[k]
+          let l:ret .= tags . "\n"
+        endfor
+      else
+        let l:ret .= k . ": " . ent[k] . "\n"
+      endif
+    endfor
+    let l:ret .= "\n"
+  endfor
   return l:ret
 endfunction
 
 function! s:dumpSummaryDetail( obj ) abort
-	return s:dumpSummary( s:detailFields, a:obj )
+  return s:dumpSummary( s:detailFields, a:obj )
 endfunction
 
 function! s:dumpSummarySimple( obj ) abort
-	return s:dumpSummary( s:summaryFields, a:obj )
+  return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
 function! s:dumpobj(showlist, header, obj) abort
@@ -293,7 +293,7 @@ function! s:readBuffer() abort
 
   return l:hash
 
- endfunction
+endfunction
 
 function! mtdataapi#createEntry( ) abort
   let siteid=g:mt_siteid
