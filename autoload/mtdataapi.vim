@@ -85,7 +85,6 @@ function! s:getNewToken() abort
   let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
 
-  return 0
 endfunction
 
 function! s:updateAccessToken() abort
@@ -170,37 +169,6 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
-function! s:dumpobj(showlist, header, obj) abort
-  let l:ret = ""
-
-  if type( a:obj ) == 0
-    let l:ret .= string(a:obj) . "\n"
-  elseif type( a:obj ) == 1
-    let l:ret .= a:obj . "\n"
-  elseif type( a:obj ) == 3
-    let l:ret .=  a:header . " " . " #:array" . "\n"
-    for i in a:obj
-      let l:ret .= s:dumpobj( a:showlist , a:header . "#" , i )
-    endfor
-  elseif type( a:obj ) == 4
-
-    let viewlist = []
-    for v in a:showlist
-      if match( keys( a:obj ) , v ) >= 0
-        call add(viewlist, v)
-      endif
-    endfor
-
-    for k in viewlist
-      let l:ret .=  a:header . " " . k . " #:dictionary" . "\n"
-      let l:ret .= s:dumpobj( a:showlist , a:header . "#" , a:obj[k] )
-    endfor
-  else
-    echo "ERROR: ??? " . type( a:obj ) . a.obj
-  endif
-  return l:ret
-endfunction
-
 function! mtdataapi#getEntry( target ) abort
   set paste
   let siteid=g:mt_siteid
@@ -256,7 +224,6 @@ function! mtdataapi#getEntry( target ) abort
     elseif a:target == "detail"
       let data = s:dumpSummaryDetail( jsonobj.items)
     else
-      " let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
       let data = s:dumpSummarySimple( jsonobj.items)
     endif
     execute ":normal ggdGa" . data
