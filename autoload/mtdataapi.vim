@@ -9,7 +9,7 @@ set cpo&vim
 let s:sessionId = 0
 let s:clientId = "mt_dataapi"
 
-" for Vital.vim
+" Using Vital.vim
 let s:V = vital#mtdataapi#new()
 let s:Http = s:V.import("Web.HTTP")
 let s:Json = s:V.import("Web.JSON")
@@ -41,14 +41,14 @@ function! s:auth() abort
   let dataapiendpoint="/v4/authentication"
   let l:param = {"username": g:mt_username , "password": g:mt_password , "clientId": s:clientId , "remember": "1" }
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param )
+
   if res.status != 200
-    echo "in s:auth(), got status: " . res.status . " with messages followings"
-    echo res.content
+    " at below line, throw is better than echoe?
+    echoe "in auth() in s:auth()\n got status: " . res.status . " with messages followings" . res.content
     " echo res.status
     " echo res.message
     " echo res.header
     " echo res.content
-    return
   endif
   let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
@@ -60,12 +60,18 @@ function! s:getNewToken() abort
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/token"
   let l:param = {"clientId": s:clientId }
+
   let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+
   if res.status != 200
-    if res.status == 401
-      if s:sessionId = ""
-        call s:updateAccessToken()
-        return
+    if res.status == 401 " if expired
+      if s:sessionId != ""
+	" echo res
+	call s:updateAccessToken()
+      else
+	" echo res
+	" at below line, throw is better than echoe?
+	echoe "in not empty"
       endif
     endif
     echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
@@ -74,12 +80,12 @@ function! s:getNewToken() abort
     " echo res.message
     " echo res.header
     " echo res.content
-    return
   endif
 
   let jsonobj = s:Json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
 
+  return 0
 endfunction
 
 function! s:updateAccessToken() abort
@@ -200,62 +206,64 @@ function! mtdataapi#getEntry( target ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  if a:target == "latest"
-    let l:param = {"limit": "1"}
-  elseif a:target == "recent"
-    let l:param = {"limit": "50"}
-  elseif a:target == "simple"
-    let l:param = {"limit": "50"}
-  elseif a:target == "detail"
-    let l:param = {"limit": "50"}
-  elseif type( a:target ) == 0
-    let dataapiendpoint .= "/" . a:target
-    let l:param = {}
-  else
-    echo "ERROR: in argument check"
-  endif
 
+  try
+    if a:target == "latest"
+      let l:param = {"limit": "1"}
+    elseif a:target == "recent"
+      let l:param = {"limit": "50"}
+    elseif a:target == "simple"
+      let l:param = {"limit": "50"}
+    elseif a:target == "detail"
+      let l:param = {"limit": "50"}
+    elseif type( a:target ) == 0
+      let dataapiendpoint .= "/" . a:target
+      let l:param = {}
+    else
+      echoe "ERROR: in argument check"
+    endif
 
-  call s:updateAccessToken()
+    try
+      call s:updateAccessToken()
+    catch
+      echo "get entries without authentication." v:exception
+    endtry
 
-  let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-  if res.status != 200
-    echo "in s:mtdataapi#getEntry(), got status: " . res.status . " with messages followings"
-    echo "url: " . dataapiurl . dataapiendpoint
-    echo "access token: " . s:accessToken
-    echo "session id: " . s:sessionId
-    " echo res.message
-    echo res.content
-    " echo res.status
-    " echo res.message
-    " echo res.header
-    " echo res.content
-    return
-  endif
+    let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+    if res.status != 200
+      echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+      " echo "url: " . dataapiurl . dataapiendpoint
+      " echo "access token: " . s:accessToken
+      " echo "session id: " . s:sessionId
+      return
+    endif
 
-  let jsonobj = s:Json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo "jsonobj.items"
-  " echo jsonobj.items
+    let jsonobj = s:Json.decode(res.content)
+    " echo jsonobj
+    " echo jsonobj.totalResults
+    " echo "jsonobj.items"
+    " echo jsonobj.items
 
-  " echo "jsonobj.items[0]"
-  " echo jsonobj.items[0]
+    " echo "jsonobj.items[0]"
+    " echo jsonobj.items[0]
 
-  if type( a:target ) == 0
-    let data = s:dumpEntry( jsonobj )
-  elseif a:target == "latest"
-    let data = s:dumpEntry( jsonobj.items[0] )
-  elseif a:target == "simple"
-    let data = s:dumpSummarySimple( jsonobj.items)
-  elseif a:target == "detail"
-    let data = s:dumpSummaryDetail( jsonobj.items)
-  else
-    " let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
-    let data = s:dumpSummarySimple( jsonobj.items)
-  endif
-  execute ":normal ggdGa" . data
-  execute ":normal gg"
+    if type( a:target ) == 0
+      let data = s:dumpEntry( jsonobj )
+    elseif a:target == "latest"
+      let data = s:dumpEntry( jsonobj.items[0] )
+    elseif a:target == "simple"
+      let data = s:dumpSummarySimple( jsonobj.items)
+    elseif a:target == "detail"
+      let data = s:dumpSummaryDetail( jsonobj.items)
+    else
+      " let data = s:dumpobj( s:summaryFields , "#" , jsonobj.items)
+      let data = s:dumpSummarySimple( jsonobj.items)
+    endif
+    execute ":normal ggdGa" . data
+    execute ":normal gg"
+  catch
+    echo v:exception
+  endtry
 endfunction
 
 function! s:str2dict(ind, val ) abort
@@ -299,56 +307,55 @@ function! mtdataapi#createEntry( ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  " let l:param = {}
-  let l:entryBody =  s:readBuffer()
-  let l:param = s:Json.encode( l:entryBody )
-  let l:param = { "entry": l:param , "publish": "1" }
 
-  call s:updateAccessToken()
-  let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-  if res.status != 200
-    echo "in s:mtdataapi#createEntry(), got status: " . res.status . " with messages followings"
-    echo res.content
-    " echo res.status
-    " echo res.message
-    " echo res.header
-    " echo res.content
-    return
-  endif
+  try
+    let l:entryBody =  s:readBuffer()
+    let l:param = s:Json.encode( l:entryBody )
+    let l:param = { "entry": l:param , "publish": "1" }
 
-  let jsonobj = s:Json.decode(res.content)
-  let data = s:dumpEntry( jsonobj )
-  execute ":normal ggdGa" . data
+    call s:updateAccessToken()
+    let res = s:Http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+    if res.status != 200
+      echoe "in s:mtdataapi#createEntry(),\n got status: " . res.status . " with messages followings"
+      return
+    endif
+
+    let jsonobj = s:Json.decode(res.content)
+    let data = s:dumpEntry( jsonobj )
+    execute ":normal ggdGa" . data
+  catch
+    echo v:exception
+  endtry
 endfunction
 
 function! mtdataapi#editEntry( ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
-  let l:entryBody =  s:readBuffer()
-  if has_key( l:entryBody , "id" )
-    let dataapiendpoint .= "/" . l:entryBody["id"]
-    unlet l:entryBody["id"]
-    let l:entryBody["__method"] = "PUT"
-  endif
-  let l:param = s:Json.encode( l:entryBody )
-  let l:param = { "entry": l:param , "publish": "1" }
 
-  call s:updateAccessToken()
-  let res = s:Http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
-  if res.status != 200
-    echo "in s:mtdataapi#editEntry(), got status: " . res.status . " with messages followings"
-    echo res.content
-    " echo res.status
-    " echo res.message
-    " echo res.header
-    " echo res.content
-    return
-  endif
+  try
+    let l:entryBody =  s:readBuffer()
+    if has_key( l:entryBody , "id" )
+      let dataapiendpoint .= "/" . l:entryBody["id"]
+      unlet l:entryBody["id"]
+      let l:entryBody["__method"] = "PUT"
+    endif
+    let l:param = s:Json.encode( l:entryBody )
+    let l:param = { "entry": l:param , "publish": "1" }
 
-  let jsonobj = s:Json.decode(res.content)
-  let data = s:dumpEntry( jsonobj )
-  execute ":normal ggdGa" . data
+    call s:updateAccessToken()
+    let res = s:Http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
+    if res.status != 200
+      echoe "got abnormal status code  by http request in s:mtdataapi#editEntry()\n got status: " . res.status . " with messages followings"
+      return
+    endif
+
+    let jsonobj = s:Json.decode(res.content)
+    let data = s:dumpEntry( jsonobj )
+    execute ":normal ggdGa" . data
+  catch
+    echo v:exception
+  endtry
 endfunction
 
 let &cpoptions = s:save_cpo
