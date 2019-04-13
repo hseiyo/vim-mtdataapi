@@ -122,7 +122,7 @@ function! s:dumpEntry( obj) abort
         let l:ret .= tags . "\n"
       endfor
     elseif k == "body"
-      let l:ret .= system( 'pandoc -f html -t markdown' , a:obj[k] )
+      let l:ret .= system( 'pandoc -R -f html -t markdown' , a:obj[k] )
     else
       let l:ret .= a:obj[k] . "\n"
     endif
