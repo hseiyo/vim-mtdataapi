@@ -226,11 +226,80 @@ function! mtdataapi#getEntry( target ) abort
     else
       let data = s:dumpSummarySimple( jsonobj.items)
     endif
+    let l:pasteOption = &paste
+    set paste
     execute ":normal ggdGa" . data
     execute ":normal gg"
+    let %paste = l:pasteOption
   catch
     echo v:exception
   endtry
+endfunction
+
+function! mtdataapi#getCategory( target ) abort
+  let siteid=g:mt_siteid
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/sites/" . string(8) . "/categories"
+  let l:returnStr = ""
+
+  try
+    if a:target == ""
+      let l:param = {}
+    elseif a:target != ""
+      let l:param = {"search": a:target"}
+    else
+      echoe "ERROR: in argument check"
+    endif
+
+    try
+      call s:updateAccessToken()
+    catch
+      echo "get categories without authentication." v:exception
+    endtry
+
+    let res = s:Http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+    if res.status != 200
+      echoe "getting categories failed in s:mtdataapi#getCategory()\n got status: " . res.status . " with messages followings" . res.content
+      " echo "url: " . dataapiurl . dataapiendpoint
+      " echo "access token: " . s:accessToken
+      " echo "session id: " . s:sessionId
+      return
+    endif
+
+    let jsonobj = s:Json.decode(res.content)
+    " echo jsonobj
+    " echo jsonobj.totalResults
+    " echo jsonobj.items
+    " echo jsonobj.items
+
+    " echo jsonobj.items[0]
+    " echo jsonobj.items[0]
+
+    for l:c in jsonobj.items
+      let l:returnStr .= l:c.id . ":" . l:c.label . "\n"
+    endfor
+
+    return l:returnStr
+    " execute ":normal ggdGa" . data
+    " execute ":normal gg"
+    let &paste = l:pasteOption
+  catch
+    echo v:exception
+  endtry
+endfunction
+
+function! mtdataapi#makeEmpty() abort
+  let l:emptyEntry = ""
+  let l:emptyEntry .= "# status # Draft or Publish\n"
+  let l:emptyEntry .= "Draft\n"
+  let l:emptyEntry .= "# categories # delete line if you don't that is not suitable for this entry\n"
+  let l:emptyEntry .= mtdataapi#getCategory( "" )
+  let l:emptyEntry .= "# title # \n"
+  let l:emptyEntry .= "title of this entry\n"
+  let l:emptyEntry .= "# body # \n"
+  let l:emptyEntry .= "body of this entry\n"
+  enew
+  execute ":normal a" . l:emptyEntry
 endfunction
 
 function! s:str2dict(ind, val ) abort
@@ -289,7 +358,11 @@ function! mtdataapi#createEntry( ) abort
 
     let jsonobj = s:Json.decode(res.content)
     let data = s:dumpEntry( jsonobj )
+    let l:pasteOption = &paste
+    set paste
     execute ":normal ggdGa" . data
+    execute ":normal gg"
+    let %paste = l:pasteOption
   catch
     echo v:exception
   endtry
@@ -319,7 +392,11 @@ function! mtdataapi#editEntry( ) abort
 
     let jsonobj = s:Json.decode(res.content)
     let data = s:dumpEntry( jsonobj )
+
+    let l:pasteOption = &paste
+    set paste
     execute ":normal ggdGa" . data
+    let %paste = l:pasteOption
   catch
     echo v:exception
   endtry
