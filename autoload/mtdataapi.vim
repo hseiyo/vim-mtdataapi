@@ -362,7 +362,7 @@ function! mtdataapi#createEntry( ) abort
     set paste
     execute ":normal ggdGa" . data
     execute ":normal gg"
-    let %paste = l:pasteOption
+    let &paste = l:pasteOption
   catch
     echo v:exception
   endtry
