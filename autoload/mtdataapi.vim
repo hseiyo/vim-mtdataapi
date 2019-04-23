@@ -399,7 +399,7 @@ function! mtdataapi#editEntry( ) abort
     let l:pasteOption = &paste
     set paste
     execute ":normal ggdGa" . data
-    let %paste = l:pasteOption
+    let &paste = l:pasteOption
   catch
     echoe v:exception
   endtry
