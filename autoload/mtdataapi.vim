@@ -364,7 +364,7 @@ function! mtdataapi#createEntry( ) abort
     execute ":normal gg"
     let &paste = l:pasteOption
   catch
-    echo v:exception
+    echoe v:exception
   endtry
 endfunction
 
@@ -401,7 +401,7 @@ function! mtdataapi#editEntry( ) abort
     execute ":normal ggdGa" . data
     let %paste = l:pasteOption
   catch
-    echo v:exception
+    echoe v:exception
   endtry
 endfunction
 
