@@ -19,6 +19,9 @@ endif
 if !exists(":MtEdit")
 command! -nargs=0 MtEdit call mtdataapi#editEntry()
 endif
+if !exists(":MtNew")
+command! -nargs=0 MtNew call mtdataapi#makeEmpty()
+endif
 
 let &cpoptions = s:save_cpo
 unlet s:save_cpo
