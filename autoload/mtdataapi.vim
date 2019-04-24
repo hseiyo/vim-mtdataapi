@@ -248,7 +248,7 @@ function! mtdataapi#getCategory( target ) abort
     if a:target == ""
       let l:param = {}
     elseif a:target != ""
-      let l:param = {"search": a:target"}
+      let l:param = {"search": a:target}
     else
       echoe "ERROR: in argument check"
     endif
