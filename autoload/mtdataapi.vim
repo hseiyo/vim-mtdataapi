@@ -246,7 +246,7 @@ function! mtdataapi#getCategory( target ) abort
 
   try
     if a:target == ""
-      let l:param = {}
+      let l:param = {"limit": 1000 }
     elseif a:target != ""
       let l:param = {"search": a:target}
     else
