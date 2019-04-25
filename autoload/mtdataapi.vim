@@ -175,7 +175,7 @@ function! mtdataapi#getEntry( target ) abort
   set paste
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
     if a:target == "latest"
@@ -241,7 +241,7 @@ endfunction
 function! mtdataapi#getCategory( target ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/sites/" . string(8) . "/categories"
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/categories"
   let l:returnStr = ""
 
   try
@@ -344,7 +344,7 @@ endfunction
 function! mtdataapi#createEntry( ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
     let l:entryBody =  s:readBuffer()
@@ -373,7 +373,7 @@ endfunction
 function! mtdataapi#editEntry( ) abort
   let siteid=g:mt_siteid
   let dataapiurl=g:mt_dataapiurl
-  let dataapiendpoint="/v4/sites/" . string(8) . "/entries"
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
     let l:entryBody =  s:readBuffer()
