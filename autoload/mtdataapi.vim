@@ -196,7 +196,7 @@ function! mtdataapi#getEntry( target ) abort
     try
       call s:updateAccessToken()
     catch
-      echo "get entries without authentication." v:exception
+      echoe "get entries without authentication." v:exception
     endtry
 
     let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
@@ -232,9 +232,9 @@ function! mtdataapi#getEntry( target ) abort
     set paste
     execute ":normal ggdGa" . data
     execute ":normal gg"
-    let %paste = l:pasteOption
+    let &paste = l:pasteOption
   catch
-    echo v:exception
+    echoe v:exception
   endtry
 endfunction
 
@@ -256,7 +256,7 @@ function! mtdataapi#getCategory( target ) abort
     try
       call s:updateAccessToken()
     catch
-      echo "get categories without authentication." v:exception
+      echoe "get categories without authentication." v:exception
     endtry
 
     let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
@@ -286,7 +286,7 @@ function! mtdataapi#getCategory( target ) abort
     " execute ":normal gg"
     let &paste = l:pasteOption
   catch
-    echo v:exception
+    echoe v:exception
   endtry
 endfunction
 
