@@ -67,6 +67,7 @@ function! s:getNewToken() abort
     if res.status == 401 " if expired
       if s:sessionId != ""
 	" echo res
+        let s:sessionId = 0
 	call s:updateAccessToken()
       else
 	" echo res
