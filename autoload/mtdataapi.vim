@@ -123,9 +123,7 @@ function! s:dumpEntry( obj) abort
         let l:ret .= tags . "\n"
       endfor
     elseif k == "body"
-      " TODO: add pandoc's version check or condition for raw option
-      " let l:ret .= system( 'pandoc -R -f html -t markdown' , a:obj[k] )
-      let l:ret .= system( 'pandoc -f html+raw_html -t markdown' , a:obj[k] )
+      let l:ret .=  a:obj[k]
     else
       let l:ret .= a:obj[k] . "\n"
     endif
@@ -324,7 +322,7 @@ function! s:readBuffer() abort
     if l:pos > 0
       if f == "body"
         let l:body = join( getline( l:pos + 1 , line("$") ) , "\n" )
-        let l:hash[ f ] = system( 'pandoc -f markdown -t html' , l:body )
+        let l:hash[ f ] = l:body
       elseif f == "categories"
         call cursor( l:pos + 1 , 1 )
         let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
@@ -406,6 +404,27 @@ function! mtdataapi#editEntry( ) abort
   catch
     echoe v:exception
   endtry
+endfunction
+
+function! mtdataapi#markdownToHTML( ) range abort
+  echo "line is " . a:firstline  . "," . a:lastline
+  let l:orgstr = join( getline( a:firstline , a:lastline ) , "\n" )
+  let l:newstr = system( 'pandoc -f markdown -t html' , l:orgstr )
+  execute a:firstline . "," . a:lastline . "delete"
+  execute a:firstline - 1
+  execute "normal o" . l:newstr
+endfunction
+
+function! mtdataapi#HTMLToMarkdown( ) range abort
+  " TODO: add pandoc's version check or condition for raw option
+  " let l:ret .= system( 'pandoc -R -f html -t markdown' , a:obj[k] )
+
+  echo "line is " . a:firstline  . "," . a:lastline
+  let l:orgstr = join( getline( a:firstline , a:lastline ) , "\n" )
+  let l:newstr = system( 'pandoc -f html+raw_html -t markdown' , l:orgstr )
+  execute a:firstline . "," . a:lastline . "delete"
+  execute a:firstline - 1
+  execute "normal o" . l:newstr
 endfunction
 
 let &cpoptions = s:save_cpo

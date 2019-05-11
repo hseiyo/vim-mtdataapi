@@ -22,6 +22,12 @@ endif
 if !exists(":MtNew")
 command! -nargs=0 MtNew call mtdataapi#makeEmpty()
 endif
+if !exists(":MtMDToHTML")
+command! -nargs=0 -range MtMDToHTML <line1>,<line2>call mtdataapi#markdownToHTML()
+endif
+if !exists(":MtHTMLToMD")
+command! -nargs=0 -range MtHTMLToMD <line1>,<line2>call mtdataapi#HTMLToMarkdown()
+endif
 
 let &cpoptions = s:save_cpo
 unlet s:save_cpo
