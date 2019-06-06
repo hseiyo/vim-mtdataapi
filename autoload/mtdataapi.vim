@@ -427,5 +427,57 @@ function! mtdataapi#HTMLToMarkdown( ) range abort
   execute "normal o" . l:newstr
 endfunction
 
+function! mtdataapi#downloadSiteToFile( ) abort
+  set paste
+  let siteid=g:mt_siteid
+  let basedir=g:mt_basedir . "/" . siteid . "/"
+  let dataapiurl=g:mt_dataapiurl
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
+  let l:param = {}
+
+	call mkdir( basedir, "p" , 0700)
+
+  try
+    try
+      call s:updateAccessToken()
+    catch
+      echoe "get entries without authentication." v:exception
+    endtry
+
+    let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+    if res.status != 200
+      echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+      " echo "url: " . dataapiurl . dataapiendpoint
+      " echo "access token: " . s:accessToken
+      " echo "session id: " . s:sessionId
+      return
+    endif
+
+    let jsonobj = s:json.decode(res.content)
+    " echo jsonobj
+    " echo jsonobj.totalResults
+    " echo "jsonobj.items"
+    " echo jsonobj.items
+
+    " echo "jsonobj.items[0]"
+    " echo jsonobj.items[0]
+
+    let l:pasteOption = &paste
+    set paste
+    execute ":ene"
+    for itm in jsonobj.items
+      let data = s:dumpEntry( itm )
+
+      execute ":normal ggdGa" . data
+      execute ":normal gg"
+			execute ":w " . basedir . itm.id
+    endfor
+		execute ":bd!"
+    let &paste = l:pasteOption
+  catch
+    echoe v:exception
+  endtry
+endfunction
+
 let &cpoptions = s:save_cpo
 unlet s:save_cpo
