@@ -464,15 +464,22 @@ function! mtdataapi#downloadSiteToFile( ) abort
 
     let l:pasteOption = &paste
     set paste
-    execute ":ene"
+    execute ":new"
+
+    "write siteid to .siteconfig in basedir"
+    execute ":normal ggdGa" . "let g:mt_siteid_local = " . siteid
+    execute ":normal o" . "let g:mt_dataapiurl_local = " . dataapiurl
+		execute ":w! " . basedir . ".siteconfig"
+
+    "write each entries to file"
     for itm in jsonobj.items
       let data = s:dumpEntry( itm )
 
       execute ":normal ggdGa" . data
       execute ":normal gg"
-			execute ":w " . basedir . itm.id
+			execute ":w! " . basedir . itm.id
     endfor
-		execute ":bd!"
+		execute ":q!"
     let &paste = l:pasteOption
   catch
     echoe v:exception
