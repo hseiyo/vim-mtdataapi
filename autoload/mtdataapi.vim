@@ -433,7 +433,7 @@ function! mtdataapi#downloadSiteToFile( ) abort
   let basedir=g:mt_basedir . "/" . siteid . "/"
   let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
-  let l:param = {}
+	let l:param = {"limit": "9999"}
 
 	call mkdir( basedir, "p" , 0700)
 
