@@ -172,8 +172,8 @@ endfunction
 
 function! mtdataapi#getEntry( target ) abort
   set paste
-  let siteid=g:mt_siteid
-  let dataapiurl=g:mt_dataapiurl
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
@@ -238,8 +238,8 @@ function! mtdataapi#getEntry( target ) abort
 endfunction
 
 function! mtdataapi#getCategory( target ) abort
-  let siteid=g:mt_siteid
-  let dataapiurl=g:mt_dataapiurl
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/categories"
   let l:returnStr = ""
 
@@ -341,8 +341,8 @@ function! s:readBuffer() abort
 endfunction
 
 function! mtdataapi#createEntry( ) abort
-  let siteid=g:mt_siteid
-  let dataapiurl=g:mt_dataapiurl
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
@@ -370,8 +370,8 @@ function! mtdataapi#createEntry( ) abort
 endfunction
 
 function! mtdataapi#editEntry( ) abort
-  let siteid=g:mt_siteid
-  let dataapiurl=g:mt_dataapiurl
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   try
@@ -429,9 +429,9 @@ endfunction
 
 function! mtdataapi#downloadSiteToFile( ) abort
   set paste
-  let siteid=g:mt_siteid
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let basedir=g:mt_basedir . "/" . siteid . "/"
-  let dataapiurl=g:mt_dataapiurl
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 	let l:param = {"limit": "9999"}
 
@@ -467,8 +467,8 @@ function! mtdataapi#downloadSiteToFile( ) abort
     execute ":new"
 
     "write siteid to .siteconfig in basedir"
-    execute ":normal ggdGa" . "let g:mt_siteid_local = " . siteid
-    execute ":normal o" . "let g:mt_dataapiurl_local = " . dataapiurl
+    execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
+    execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
 		execute ":w! " . basedir . ".siteconfig"
 
     "write each entries to file"
