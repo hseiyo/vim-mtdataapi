@@ -319,15 +319,19 @@ function! s:readBuffer() abort
       if f == "body"
         let l:body = join( getline( l:pos + 1 , line("$") ) , "\n" )
         let l:hash[ f ] = l:body
+        execute ":" . l:pos + 1 . ",$delete"
       elseif f == "categories"
         call cursor( l:pos + 1 , 1 )
         let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
+        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 . "delete"
       elseif f == "tags"
         call cursor( l:pos + 1 , 1 )
         let l:hash[ f ] = getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
+        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 . "delete"
       else
         " set next line
         let l:hash[ f ] = getline( l:pos + 1 )
+        execute ":delete " . l:pos + 1
       endif
     endif
   endfor
@@ -343,6 +347,12 @@ function! mtdataapi#createEntry( ) abort
 
   try
     let l:entryBody =  s:readBuffer()
+
+    if l:entryBody["title"] =~ "^[\s]*$"
+      echoe "title is empty! Specify something!"
+      return
+    endif
+
     let l:param = s:json.encode( l:entryBody )
     let l:param = { "entry": l:param , "publish": "1" }
 
@@ -372,6 +382,12 @@ function! mtdataapi#editEntry( ) abort
 
   try
     let l:entryBody =  s:readBuffer()
+
+    if l:entryBody["title"] =~ "^[\s]*$"
+      echoe "title is empty! Specify something!"
+      return
+    endif
+
     if has_key( l:entryBody , "id" )
       let dataapiendpoint .= "/" . l:entryBody["id"]
       unlet l:entryBody["id"]
