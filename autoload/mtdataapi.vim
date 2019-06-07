@@ -7,6 +7,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:sessionId = 0
+let s:accessToken = "dummystring"
 let s:clientId = "mt_dataapi"
 
 " Using Vital.vim
@@ -63,25 +64,17 @@ function! s:getNewToken() abort
 
   let res = s:http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
 
-  if res.status != 200
-    if res.status == 401 " if expired
-      if s:sessionId != ""
-	" echo res
-        let s:sessionId = 0
-	call s:updateAccessToken()
-      else
-	" echo res
-	" at below line, throw is better than echoe?
-	echoe "in not empty"
-      endif
-    endif
-    echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
-    echo res.content
-    " echo res.status
-    " echo res.message
-    " echo res.header
-    " echo res.content
-  endif
+	if res.status != 200
+		call s:auth()
+		return
+	endif
+
+	" echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
+	" echo res.content
+	" echo res.status
+	" echo res.message
+	" echo res.header
+	" echo res.content
 
   let jsonobj = s:json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
@@ -89,8 +82,11 @@ function! s:getNewToken() abort
 endfunction
 
 function! s:updateAccessToken() abort
-  if s:sessionId != ""
+  "if accessToken is valid
+  if s:sessionId != "0"
     call s:getNewToken()
+
+  "if accessToken is invalid
   else
     call s:auth()
   endif
