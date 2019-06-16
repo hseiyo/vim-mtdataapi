@@ -7,7 +7,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 if exists('g:loaded_mtdataapi')
- finish
+  finish
 endif
 let g:loaded_mtdataapi = 1
 if !exists(":MtGet")
@@ -17,16 +17,16 @@ if !exists(":MtCreate")
   command! -nargs=0 MtCreate call mtdataapi#createEntry()
 endif
 if !exists(":MtEdit")
-command! -nargs=0 MtEdit call mtdataapi#editEntry()
+  command! -nargs=0 MtEdit call mtdataapi#editEntry()
 endif
 if !exists(":MtNew")
-command! -nargs=0 MtNew call mtdataapi#makeEmpty()
+  command! -nargs=0 MtNew call mtdataapi#makeEmpty()
 endif
 if !exists(":MtMDToHTML")
-command! -nargs=0 -range MtMDToHTML <line1>,<line2>call mtdataapi#markdownToHTML()
+  command! -nargs=0 -range MtMDToHTML <line1>,<line2>call mtdataapi#markdownToHTML()
 endif
 if !exists(":MtHTMLToMD")
-command! -nargs=0 -range MtHTMLToMD <line1>,<line2>call mtdataapi#HTMLToMarkdown()
+  command! -nargs=0 -range MtHTMLToMD <line1>,<line2>call mtdataapi#HTMLToMarkdown()
 endif
 
 let &cpoptions = s:save_cpo
