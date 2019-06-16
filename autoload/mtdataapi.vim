@@ -306,6 +306,7 @@ function! s:readBuffer() abort
   let l:retstr = ""
   let l:lastlineno = line("$")
 
+  "read and delete lines
   for f in s:entryFields
     call cursor(1,1)
     let l:pos = search( "^# " . f . " #" , 'cnW' , len( s:entryFields ) * 2 )
@@ -329,6 +330,10 @@ function! s:readBuffer() abort
       endif
     endif
   endfor
+
+  "restore lines are deleted
+  call cursor(1,1)
+  execute ":normal A" . s:dumpEntry( l:hash )
 
   return l:hash
 
