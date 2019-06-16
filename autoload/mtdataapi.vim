@@ -45,7 +45,9 @@ function! s:auth() abort
 
   if res.status != 200
     " at below line, throw is better than echoe?
+    echohl ErrorMsg
     echoe "in auth() in s:auth()\n got status: " . res.status . " with messages followings\n" . res.content
+    echohl Normal
     " echo res.status
     " echo res.message
     " echo res.header
@@ -64,17 +66,17 @@ function! s:getNewToken() abort
 
   let res = s:http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
 
-	if res.status != 200
-		call s:auth()
-		return
-	endif
+  if res.status != 200
+    call s:auth()
+    return
+  endif
 
-	" echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
-	" echo res.content
-	" echo res.status
-	" echo res.message
-	" echo res.header
-	" echo res.content
+  " echo "in s:getNewToken(), got status: " . res.status . " with messages followings"
+  " echo res.content
+  " echo res.status
+  " echo res.message
+  " echo res.header
+  " echo res.content
 
   let jsonobj = s:json.decode(res.content)
   let s:accessToken = jsonobj.accessToken
@@ -86,7 +88,7 @@ function! s:updateAccessToken() abort
   if s:sessionId != "0"
     call s:getNewToken()
 
-  "if accessToken is invalid
+    "if accessToken is invalid
   else
     call s:auth()
   endif
@@ -172,65 +174,61 @@ function! mtdataapi#getEntry( target ) abort
   let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
-  try
-    if a:target == "latest"
-      let l:param = {"limit": "1"}
-    elseif a:target == "recent"
-      let l:param = {"limit": "50"}
-    elseif a:target == "simple"
-      let l:param = {"limit": "50"}
-    elseif a:target == "detail"
-      let l:param = {"limit": "50"}
-    elseif type( a:target ) == 0
-      let dataapiendpoint .= "/" . a:target
-      let l:param = {}
-    else
-      echoe "ERROR: in argument check"
-    endif
+  if a:target == "latest"
+    let l:param = {"limit": "1"}
+  elseif a:target == "recent"
+    let l:param = {"limit": "50"}
+  elseif a:target == "simple"
+    let l:param = {"limit": "50"}
+  elseif a:target == "detail"
+    let l:param = {"limit": "50"}
+  elseif type( a:target ) == 0
+    let dataapiendpoint .= "/" . a:target
+    let l:param = {}
+  else
+    echohl ErrorMsg
+    echoe "ERROR: in argument check"
+    echohl Normal
+  endif
 
-    try
-      call s:updateAccessToken()
-    catch
-      echoe "get entries without authentication." v:exception
-    endtry
+  call s:updateAccessToken()
 
-    let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-    if res.status != 200
-      echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
-      " echo "url: " . dataapiurl . dataapiendpoint
-      " echo "access token: " . s:accessToken
-      " echo "session id: " . s:sessionId
-      return
-    endif
+  let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echohl ErrorMsg
+    echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+    echohl Normal
+    " echo "url: " . dataapiurl . dataapiendpoint
+    " echo "access token: " . s:accessToken
+    " echo "session id: " . s:sessionId
+    return
+  endif
 
-    let jsonobj = s:json.decode(res.content)
-    " echo jsonobj
-    " echo jsonobj.totalResults
-    " echo "jsonobj.items"
-    " echo jsonobj.items
+  let jsonobj = s:json.decode(res.content)
+  " echo jsonobj
+  " echo jsonobj.totalResults
+  " echo "jsonobj.items"
+  " echo jsonobj.items
 
-    " echo "jsonobj.items[0]"
-    " echo jsonobj.items[0]
+  " echo "jsonobj.items[0]"
+  " echo jsonobj.items[0]
 
-    if type( a:target ) == 0
-      let data = s:dumpEntry( jsonobj )
-    elseif a:target == "latest"
-      let data = s:dumpEntry( jsonobj.items[0] )
-    elseif a:target == "simple"
-      let data = s:dumpSummarySimple( jsonobj.items)
-    elseif a:target == "detail"
-      let data = s:dumpSummaryDetail( jsonobj.items)
-    else
-      let data = s:dumpSummarySimple( jsonobj.items)
-    endif
-    let l:pasteOption = &paste
-    set paste
-    execute ":normal ggdGa" . data
-    execute ":normal gg"
-    let &paste = l:pasteOption
-  catch
-    echoe v:exception
-  endtry
+  if type( a:target ) == 0
+    let data = s:dumpEntry( jsonobj )
+  elseif a:target == "latest"
+    let data = s:dumpEntry( jsonobj.items[0] )
+  elseif a:target == "simple"
+    let data = s:dumpSummarySimple( jsonobj.items)
+  elseif a:target == "detail"
+    let data = s:dumpSummaryDetail( jsonobj.items)
+  else
+    let data = s:dumpSummarySimple( jsonobj.items)
+  endif
+  let l:pasteOption = &paste
+  set paste
+  execute ":normal ggdGa" . data
+  execute ":normal gg"
+  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#getCategory( target ) abort
@@ -239,50 +237,46 @@ function! mtdataapi#getCategory( target ) abort
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/categories"
   let l:returnStr = ""
 
-  try
-    if a:target == ""
-      let l:param = {"limit": 1000 }
-    elseif a:target != ""
-      let l:param = {"search": a:target}
-    else
-      echoe "ERROR: in argument check"
-    endif
+  if a:target == ""
+    let l:param = {"limit": 1000 }
+  elseif a:target != ""
+    let l:param = {"search": a:target}
+  else
+    echohl ErrorMsg
+    echoe "ERROR: in argument check"
+    echohl Normal
+  endif
 
-    try
-      call s:updateAccessToken()
-    catch
-      echoe "get categories without authentication." v:exception
-    endtry
+  call s:updateAccessToken()
 
-    let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-    if res.status != 200
-      echoe "getting categories failed in s:mtdataapi#getCategory()\n got status: " . res.status . " with messages followings" . res.content
-      " echo "url: " . dataapiurl . dataapiendpoint
-      " echo "access token: " . s:accessToken
-      " echo "session id: " . s:sessionId
-      return
-    endif
+  let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echohl ErrorMsg
+    echoe "getting categories failed in s:mtdataapi#getCategory()\n got status: " . res.status . " with messages followings" . res.content
+    echohl Normal
+    " echo "url: " . dataapiurl . dataapiendpoint
+    " echo "access token: " . s:accessToken
+    " echo "session id: " . s:sessionId
+    return
+  endif
 
-    let jsonobj = s:json.decode(res.content)
-    " echo jsonobj
-    " echo jsonobj.totalResults
-    " echo jsonobj.items
-    " echo jsonobj.items
+  let jsonobj = s:json.decode(res.content)
+  " echo jsonobj
+  " echo jsonobj.totalResults
+  " echo jsonobj.items
+  " echo jsonobj.items
 
-    " echo jsonobj.items[0]
-    " echo jsonobj.items[0]
+  " echo jsonobj.items[0]
+  " echo jsonobj.items[0]
 
-    for l:c in jsonobj.items
-      let l:returnStr .= l:c.id . ":" . l:c.label . "\n"
-    endfor
+  for l:c in jsonobj.items
+    let l:returnStr .= l:c.id . ":" . l:c.label . "\n"
+  endfor
 
-    return l:returnStr
-    " execute ":normal ggdGa" . data
-    " execute ":normal gg"
-    let &paste = l:pasteOption
-  catch
-    echoe v:exception
-  endtry
+  return l:returnStr
+  " execute ":normal ggdGa" . data
+  " execute ":normal gg"
+  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#makeEmpty() abort
@@ -345,34 +339,35 @@ function! mtdataapi#createEntry( ) abort
   let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
-  try
-    let l:entryBody =  s:readBuffer()
+  let l:entryBody =  s:readBuffer()
 
-    if l:entryBody["title"] =~ "^[\s]*$"
-      echoe "title is empty! Specify something!"
-      return
-    endif
+  if l:entryBody["title"] =~ "^[\s]*$"
+    echohl ErrorMsg
+    echoe "title is empty! Specify something!"
+    echohl Normal
+    return
+  endif
 
-    let l:param = s:json.encode( l:entryBody )
-    let l:param = { "entry": l:param , "publish": "1" }
+  let l:param = s:json.encode( l:entryBody )
+  let l:param = { "entry": l:param , "publish": "1" }
 
-    call s:updateAccessToken()
-    let res = s:http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-    if res.status != 200
-      echoe "in s:mtdataapi#createEntry(),\n got status: " . res.status . " with messages followings"
-      return
-    endif
+  call s:updateAccessToken()
 
-    let jsonobj = s:json.decode(res.content)
-    let data = s:dumpEntry( jsonobj )
-    let l:pasteOption = &paste
-    set paste
-    execute ":normal ggdGa" . data
-    execute ":normal gg"
-    let &paste = l:pasteOption
-  catch
-    echoe v:exception
-  endtry
+  let res = s:http.post( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echohl ErrorMsg
+    echoe "in s:mtdataapi#createEntry(),\n got status: " . res.status . " with messages followings"
+    echohl Normal
+    return
+  endif
+
+  let jsonobj = s:json.decode(res.content)
+  let data = s:dumpEntry( jsonobj )
+  let l:pasteOption = &paste
+  set paste
+  execute ":normal ggdGa" . data
+  execute ":normal gg"
+  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#editEntry( ) abort
@@ -380,42 +375,42 @@ function! mtdataapi#editEntry( ) abort
   let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
-  try
-    let l:entryBody =  s:readBuffer()
+  let l:entryBody =  s:readBuffer()
 
-    if l:entryBody["title"] =~ "^[\s]*$"
-      echoe "title is empty! Specify something!"
-      return
-    endif
+  if l:entryBody["title"] =~ "^[\s]*$"
+    echohl ErrorMsg
+    echoe "title is empty! Specify something!"
+    echohl Normal
+    return
+  endif
 
-    if has_key( l:entryBody , "id" )
-      let dataapiendpoint .= "/" . l:entryBody["id"]
-      unlet l:entryBody["id"]
-      let l:entryBody["__method"] = "PUT"
-    else
-      "do nothing
-      return
-    endif
-    let l:param = s:json.encode( l:entryBody )
-    let l:param = { "entry": l:param , "publish": "1" }
+  if has_key( l:entryBody , "id" )
+    let dataapiendpoint .= "/" . l:entryBody["id"]
+    unlet l:entryBody["id"]
+    let l:entryBody["__method"] = "PUT"
+  else
+    "do nothing
+    return
+  endif
+  let l:param = s:json.encode( l:entryBody )
+  let l:param = { "entry": l:param , "publish": "1" }
 
-    call s:updateAccessToken()
-    let res = s:http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
-    if res.status != 200
-      echoe "got abnormal status code  by http request in s:mtdataapi#editEntry()\n got status: " . res.status . " with messages followings"
-      return
-    endif
+  call s:updateAccessToken()
+  let res = s:http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
+  if res.status != 200
+    echohl ErrorMsg
+    echoe "got abnormal status code  by http request in s:mtdataapi#editEntry()\n got status: " . res.status . " with messages followings"
+    echohl Normal
+    return
+  endif
 
-    let jsonobj = s:json.decode(res.content)
-    let data = s:dumpEntry( jsonobj )
+  let jsonobj = s:json.decode(res.content)
+  let data = s:dumpEntry( jsonobj )
 
-    let l:pasteOption = &paste
-    set paste
-    execute ":normal ggdGa" . data
-    let &paste = l:pasteOption
-  catch
-    echoe v:exception
-  endtry
+  let l:pasteOption = &paste
+  set paste
+  execute ":normal ggdGa" . data
+  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#markdownToHTML( ) range abort
@@ -445,57 +440,51 @@ function! mtdataapi#downloadSiteToFile( ) abort
   let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let basedir=g:mt_basedir . "/" . siteid . "/"
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
-	let l:param = {"limit": "9999"}
+  let l:param = {"limit": "9999"}
 
-	call mkdir( basedir, "p" , 0700)
+  call mkdir( basedir, "p" , 0700)
 
-  try
-    try
-      call s:updateAccessToken()
-    catch
-      echoe "get entries without authentication." v:exception
-    endtry
+  call s:updateAccessToken()
 
-    let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
-    if res.status != 200
-      echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
-      " echo "url: " . dataapiurl . dataapiendpoint
-      " echo "access token: " . s:accessToken
-      " echo "session id: " . s:sessionId
-      return
-    endif
+  let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
+  if res.status != 200
+    echohl ErrorMsg
+    echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+    echohl Normal
+    " echo "url: " . dataapiurl . dataapiendpoint
+    " echo "access token: " . s:accessToken
+    " echo "session id: " . s:sessionId
+    return
+  endif
 
-    let jsonobj = s:json.decode(res.content)
-    " echo jsonobj
-    " echo jsonobj.totalResults
-    " echo "jsonobj.items"
-    " echo jsonobj.items
+  let jsonobj = s:json.decode(res.content)
+  " echo jsonobj
+  " echo jsonobj.totalResults
+  " echo "jsonobj.items"
+  " echo jsonobj.items
 
-    " echo "jsonobj.items[0]"
-    " echo jsonobj.items[0]
+  " echo "jsonobj.items[0]"
+  " echo jsonobj.items[0]
 
-    let l:pasteOption = &paste
-    set paste
-    execute ":new"
+  let l:pasteOption = &paste
+  set paste
+  execute ":new"
 
-    "write siteid to .siteconfig in basedir"
-    execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
-    execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
-		execute ":w! " . basedir . ".siteconfig"
+  "write siteid to .siteconfig in basedir"
+  execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
+  execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
+  execute ":w! " . basedir . ".siteconfig"
 
-    "write each entries to file"
-    for itm in jsonobj.items
-      let data = s:dumpEntry( itm )
+  "write each entries to file"
+  for itm in jsonobj.items
+    let data = s:dumpEntry( itm )
 
-      execute ":normal ggdGa" . data
-      execute ":normal gg"
-			execute ":w! " . basedir . itm.id
-    endfor
-		execute ":q!"
-    let &paste = l:pasteOption
-  catch
-    echoe v:exception
-  endtry
+    execute ":normal ggdGa" . data
+    execute ":normal gg"
+    execute ":w! " . basedir . itm.id
+  endfor
+  execute ":q!"
+  let &paste = l:pasteOption
 endfunction
 
 let &cpoptions = s:save_cpo
