@@ -171,7 +171,7 @@ endfunction
 function! mtdataapi#getEntry( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
-  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   if a:target == "latest"
@@ -233,7 +233,7 @@ endfunction
 
 function! mtdataapi#getCategory( target ) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
-  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/categories"
   let l:returnStr = ""
 
@@ -341,7 +341,7 @@ endfunction
 
 function! mtdataapi#createEntry( ) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
-  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   let l:entryBody =  s:readBuffer()
@@ -377,7 +377,7 @@ endfunction
 
 function! mtdataapi#editEntry( ) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
-  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
   let l:entryBody =  s:readBuffer()
@@ -442,7 +442,7 @@ endfunction
 function! mtdataapi#downloadSiteToFile( ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
-  let dataapiurl=get(g: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let basedir=g:mt_basedir . "/" . siteid . "/"
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
   let l:param = {"limit": "9999"}
