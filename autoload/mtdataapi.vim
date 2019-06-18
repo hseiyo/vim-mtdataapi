@@ -197,7 +197,10 @@ function! mtdataapi#openEntry( target ) abort
 
 endfunction
 
-function! mtdataapi#getEntry( target ) abort
+" mtdataapi#viewEntry( target )
+" view entry.
+" similar to openEntry(), but viewEntry does not download entry as a file.
+function! mtdataapi#veiwEntry( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
@@ -221,7 +224,7 @@ function! mtdataapi#getEntry( target ) abort
   let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   if res.status != 200
     echohl ErrorMsg
-    echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+    echoe "getting entries failed in s:mtdataapi#viewEntry()\n got status: " . res.status . " with messages followings" . res.content
     echohl Normal
     " echo "url: " . dataapiurl . dataapiendpoint
     " echo "access token: " . s:accessToken
@@ -479,7 +482,7 @@ function! mtdataapi#downloadSiteToFile( target ) abort
   let res = s:http.get( dataapiurl . dataapiendpoint , l:param , s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} )
   if res.status != 200
     echohl ErrorMsg
-    echoe "getting entries failed in s:mtdataapi#getEntry()\n got status: " . res.status . " with messages followings" . res.content
+    echoe "getting entries failed in s:mtdataapi#viewEntry()\n got status: " . res.status . " with messages followings" . res.content
     echohl Normal
     " echo "url: " . dataapiurl . dataapiendpoint
     " echo "access token: " . s:accessToken

@@ -10,8 +10,11 @@ if exists('g:loaded_mtdataapi')
   finish
 endif
 let g:loaded_mtdataapi = 1
-if !exists(":MtGet")
-  command! -nargs=1 MtGet call mtdataapi#getEntry(<args>)
+if !exists(":MtOpen")
+  command! -nargs=1 MtOpen call mtdataapi#openEntry(<args>)
+endif
+if !exists(":MtVew")
+  command! -nargs=1 MtView call mtdataapi#viewEntry(<args>)
 endif
 if !exists(":MtCreate")
   command! -nargs=0 MtCreate call mtdataapi#createEntry()
