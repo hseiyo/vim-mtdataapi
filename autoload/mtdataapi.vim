@@ -363,6 +363,12 @@ function! s:readBuffer() abort
 
 endfunction
 
+function! mtdataapi#saveEntry( ) abort
+  execute ":w"
+  call mtdataapi#editEntry()
+endfunction
+
+
 function! mtdataapi#createEntry( ) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
