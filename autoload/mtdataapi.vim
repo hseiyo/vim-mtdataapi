@@ -28,7 +28,7 @@ let s:entryFields += [ "label" ]"
 " entries
 " top level
 let s:summaryFields = [ "id" , "status" , "permalink" , "title" ]
-let s:detailFields = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "modifiedDate" , "title" ]
+" let s:detailFields = [ "id" , "status" , "permalink" , "categories" , "keywords" , "tags" , "modifiedDate" , "title" ]
 
 "
 " tokens
@@ -160,10 +160,6 @@ function! s:dumpSummary( list, obj ) abort
   return l:ret
 endfunction
 
-function! s:dumpSummaryDetail( obj ) abort
-  return s:dumpSummary( s:detailFields, a:obj )
-endfunction
-
 function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
@@ -177,10 +173,6 @@ function! mtdataapi#getEntry( target ) abort
   if a:target == "latest"
     let l:param = {"limit": "1"}
   elseif a:target == "recent"
-    let l:param = {"limit": "50"}
-  elseif a:target == "simple"
-    let l:param = {"limit": "50"}
-  elseif a:target == "detail"
     let l:param = {"limit": "50"}
   elseif type( a:target ) == 0
     let dataapiendpoint .= "/" . a:target
@@ -217,11 +209,7 @@ function! mtdataapi#getEntry( target ) abort
     let data = s:dumpEntry( jsonobj )
   elseif a:target == "latest"
     let data = s:dumpEntry( jsonobj.items[0] )
-  elseif a:target == "simple"
-    let data = s:dumpSummarySimple( jsonobj.items)
-  elseif a:target == "detail"
-    let data = s:dumpSummaryDetail( jsonobj.items)
-  else
+  else " recent
     let data = s:dumpSummarySimple( jsonobj.items)
   endif
   let l:pasteOption = &paste
