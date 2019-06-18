@@ -404,6 +404,8 @@ function! mtdataapi#editEntry( ) abort
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
 
+  let savepos = getpos(".")
+
   let l:entryBody =  s:readBuffer()
 
   if l:entryBody["title"] =~ "^[\s]*$"
@@ -439,6 +441,7 @@ function! mtdataapi#editEntry( ) abort
   let l:pasteOption = &paste
   set paste
   execute ":normal ggdGa" . data
+  call setpos(".", savepos)
   let &paste = l:pasteOption
 endfunction
 
