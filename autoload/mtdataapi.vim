@@ -164,6 +164,39 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
+" mtdataapi#openEntry( target )
+" open entry file.
+" if entry file does not exist, download it.
+function! mtdataapi#openEntry( target ) abort
+  let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
+  let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
+  let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
+  let basedir=g:mt_basedir . "/" . siteid . "/"
+
+  " determin entry id to open
+  if type( a:target ) == 0
+    let l:eid = a:target
+  else
+    echohl ErrorMsg
+    echoe "ERROR: in argument check"
+    echohl Normal
+  endif
+
+  if filereadable( basedir . l:eid ) == v:false
+    call mtdataapi#downloadSiteToFile( l:eid )
+  endif
+
+  " open entry by id
+  if filereadable( basedir . l:eid )
+    execute ":e " . basedir . l:eid
+  else
+    echohl ErrorMsg
+    echoe "ERROR: specified entry id does not exist"
+    echohl Normal
+  endif
+
+endfunction
+
 function! mtdataapi#getEntry( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
@@ -427,13 +460,17 @@ function! mtdataapi#HTMLToMarkdown( ) range abort
   execute "normal o" . l:newstr
 endfunction
 
-function! mtdataapi#downloadSiteToFile( ) abort
+function! mtdataapi#downloadSiteToFile( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let basedir=g:mt_basedir . "/" . siteid . "/"
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
   let l:param = {"limit": "9999"}
+
+  if type( a:target ) == 0
+    let dataapiendpoint .= "/" . a:target
+  endif
 
   call mkdir( basedir, "p" , 0700)
 
@@ -468,14 +505,24 @@ function! mtdataapi#downloadSiteToFile( ) abort
   execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
   execute ":w! " . basedir . ".siteconfig"
 
-  "write each entries to file"
-  for itm in jsonobj.items
-    let data = s:dumpEntry( itm )
+  "write one entry to file"
+	if type( a:target ) == 0
+    let data = s:dumpEntry( jsonobj )
 
     execute ":normal ggdGa" . data
     execute ":normal gg"
-    execute ":w! " . basedir . itm.id
-  endfor
+    execute ":w! " . basedir . jsonobj.id
+	else
+  "write each entries to file"
+		for itm in jsonobj.items
+			let data = s:dumpEntry( itm )
+
+			execute ":normal ggdGa" . data
+			execute ":normal gg"
+			execute ":w! " . basedir . itm.id
+		endfor
+	endif
+
   execute ":q!"
   let &paste = l:pasteOption
 endfunction
