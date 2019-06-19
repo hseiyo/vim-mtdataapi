@@ -200,7 +200,7 @@ endfunction
 " mtdataapi#viewEntry( target )
 " view entry.
 " similar to openEntry(), but viewEntry does not download entry as a file.
-function! mtdataapi#veiwEntry( target ) abort
+function! mtdataapi#viewEntry( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
@@ -233,13 +233,6 @@ function! mtdataapi#veiwEntry( target ) abort
   endif
 
   let jsonobj = s:json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo "jsonobj.items"
-  " echo jsonobj.items
-
-  " echo "jsonobj.items[0]"
-  " echo jsonobj.items[0]
 
   if type( a:target ) == 0
     let data = s:dumpEntry( jsonobj )
@@ -285,13 +278,6 @@ function! mtdataapi#getCategory( target ) abort
   endif
 
   let jsonobj = s:json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo jsonobj.items
-  " echo jsonobj.items
-
-  " echo jsonobj.items[0]
-  " echo jsonobj.items[0]
 
   for l:c in jsonobj.items
     let l:returnStr .= l:c.id . ":" . l:c.label . "\n"
@@ -500,13 +486,6 @@ function! mtdataapi#downloadSiteToFile( target ) abort
   endif
 
   let jsonobj = s:json.decode(res.content)
-  " echo jsonobj
-  " echo jsonobj.totalResults
-  " echo "jsonobj.items"
-  " echo jsonobj.items
-
-  " echo "jsonobj.items[0]"
-  " echo jsonobj.items[0]
 
   let l:pasteOption = &paste
   set paste
@@ -518,7 +497,7 @@ function! mtdataapi#downloadSiteToFile( target ) abort
   execute ":w! " . basedir . ".siteconfig"
 
   "write one entry to file"
-	if type( a:target ) == 0
+  if type( a:target ) == 0
     let data = s:dumpEntry( jsonobj )
 
     execute ":normal ggdGa" . data
