@@ -114,7 +114,7 @@ function! s:dumpEntry( obj) abort
     let l:ret .=  "# " . k . " #\n"
     if k == "categories"
       for category in a:obj[k]
-        let l:ret .= category.id . ":" . category.label . "\n"
+        let l:ret .= category["id"] .. ":" .. category["label"] .. "\n"
       endfor
     elseif k == "tags"
       for tags in a:obj[k]
@@ -321,7 +321,7 @@ function! s:str2dict(ind, val ) abort
   let l:a = split( a:val , ":" )
   " l:a[0] is "id"
   " l:a[1] is a label string that is ignored here.
-  let l:d = { "id": l:a[0] }
+  let l:d = { "id": l:a[0] , "label": l:a[1] }
   return l:d
 endfunction
 
@@ -333,7 +333,7 @@ function! s:readBuffer() abort
   "read and delete lines
   for f in s:entryFields
     call cursor(1,1)
-    let l:pos = search( "^# " . f . " #" , 'cnW' , len( s:entryFields ) * 2 )
+    let l:pos = search( "^# " . f . " #" , 'cnW' , len( s:entryFields ) * 200 )
     if l:pos > 0
       if f == "body"
         let l:body = join( getline( l:pos + 1 , line("$") ) , "\n" )
@@ -341,12 +341,12 @@ function! s:readBuffer() abort
         execute ":" . l:pos + 1 . ",$delete"
       elseif f == "categories"
         call cursor( l:pos + 1 , 1 )
-        let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 ) , function('s:str2dict') )
-        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 . "delete"
+        let l:hash[ f ] = map( getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 200 ) - 1 ) , function('s:str2dict') )
+        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 200 ) - 1 . "delete"
       elseif f == "tags"
         call cursor( l:pos + 1 , 1 )
-        let l:hash[ f ] = getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 )
-        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 2 ) - 1 . "delete"
+        let l:hash[ f ] = getline( l:pos + 1 , search( "^# " , 'cnW' , len( s:entryFields ) * 200 ) - 1 )
+        execute ":" . l:pos + 1 . "," . search( "^# " , 'cnW' , len( s:entryFields ) * 200 ) - 1 . "delete"
       else
         " set next line
         let l:hash[ f ] = getline( l:pos + 1 )
