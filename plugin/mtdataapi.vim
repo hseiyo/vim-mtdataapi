@@ -11,7 +11,7 @@ if exists('g:loaded_mtdataapi')
 endif
 let g:loaded_mtdataapi = 1
 if !exists(":MtOpen")
-  command! -nargs=1 MtOpen call mtdataapi#openEntry(<args>)
+  command! -nargs=+ MtOpen call mtdataapi#openEntry(<args>)
 endif
 if !exists(":MtVew")
   command! -nargs=1 MtView call mtdataapi#viewEntry(<args>)

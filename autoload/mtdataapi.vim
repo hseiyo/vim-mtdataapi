@@ -164,10 +164,11 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
-" mtdataapi#openEntry( target )
+" mtdataapi#openEntry( target , force )
 " open entry file.
 " if entry file does not exist, download it.
-function! mtdataapi#openEntry( target ) abort
+
+function! mtdataapi#openEntry(target, force) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -182,7 +183,7 @@ function! mtdataapi#openEntry( target ) abort
     echohl Normal
   endif
 
-  if filereadable( basedir . l:eid ) == v:false
+  if a:force || filereadable( basedir . l:eid ) == v:false
     call mtdataapi#downloadSiteToFile( l:eid )
   endif
 
@@ -241,11 +242,9 @@ function! mtdataapi#viewEntry( target ) abort
   else " recent
     let data = s:dumpSummarySimple( jsonobj.items)
   endif
-  let l:pasteOption = &paste
-  set paste
-  execute ":normal ggdGa" . data
-  execute ":normal gg"
-  let &paste = l:pasteOption
+
+  call mtdataapi#updateBuffer( data )
+
 endfunction
 
 function! mtdataapi#getCategory( target ) abort
@@ -284,9 +283,6 @@ function! mtdataapi#getCategory( target ) abort
   endfor
 
   return l:returnStr
-  " execute ":normal ggdGa" . data
-  " execute ":normal gg"
-  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#makeEmpty() abort
@@ -350,10 +346,17 @@ function! s:readBuffer() abort
 endfunction
 
 function! mtdataapi#saveEntry( ) abort
-  execute ":w"
+  " execute ":w"
   call mtdataapi#editEntry()
 endfunction
 
+function! mtdataapi#updateBuffer( data ) abort
+  let l:pasteOption = &paste
+  set paste
+  execute ":normal ggdGa" . a:data
+  execute ":normal gg"
+  let &paste = l:pasteOption
+endfunction
 
 function! mtdataapi#createEntry( ) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
@@ -383,12 +386,11 @@ function! mtdataapi#createEntry( ) abort
   endif
 
   let jsonobj = s:json.decode(res.content)
-  let data = s:dumpEntry( jsonobj )
-  let l:pasteOption = &paste
-  set paste
-  execute ":normal ggdGa" . data
-  execute ":normal gg"
-  let &paste = l:pasteOption
+  " let data = s:dumpEntry( jsonobj )
+
+  call mtdataapi#openEntry( jsonobj.id , v:false)
+  " call mtdataapi#updateBuffer( data )
+
 endfunction
 
 function! mtdataapi#editEntry( ) abort
@@ -399,6 +401,7 @@ function! mtdataapi#editEntry( ) abort
   let savepos = getpos(".")
 
   let l:entryBody =  s:readBuffer()
+  execute ":w"
 
   if l:entryBody["title"] =~ "^[\s]*$"
     echohl ErrorMsg
@@ -428,13 +431,10 @@ function! mtdataapi#editEntry( ) abort
   endif
 
   let jsonobj = s:json.decode(res.content)
-  let data = s:dumpEntry( jsonobj )
-
-  let l:pasteOption = &paste
-  set paste
-  execute ":normal ggdGa" . data
+  call mtdataapi#openEntry( jsonobj.id , v:true )
+  " let data = s:dumpEntry( jsonobj )
+  " call mtdataapi#updateBuffer( data )
   call setpos(".", savepos)
-  let &paste = l:pasteOption
 endfunction
 
 function! mtdataapi#markdownToHTML( ) range abort
@@ -489,32 +489,37 @@ function! mtdataapi#downloadSiteToFile( target ) abort
 
   let l:pasteOption = &paste
   set paste
-  execute ":new"
 
-  "write siteid to .siteconfig in basedir"
-  execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
-  execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
-  execute ":w! " . basedir . ".siteconfig"
+  " execute ":new"
+
+  if type( a:target ) != 0 && expand("%") != target
+    "write siteid to .siteconfig in basedir"
+    execute ":e " . basedir . ".siteconfig"
+    execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
+    execute ":normal o" . "let b:mt_dataapiurl = " . '"' . dataapiurl . '"'
+    execute ":w"
+    execute ":bwipeout"
+  endif
 
   "write one entry to file"
   if type( a:target ) == 0
     let data = s:dumpEntry( jsonobj )
+    execute ":e " . basedir . jsonobj.id
+    call mtdataapi#updateBuffer( data )
+    execute ":w"
+    " execute ":bwipeout"
+  else
+    "write each entries to file"
+    for itm in jsonobj.items
+      let data = s:dumpEntry( itm )
+      execute ":e " . basedir . itm.id
+      call mtdataapi#updateBuffer( data )
+      execute ":w"
+      execute ":bwipeout"
+    endfor
+  endif
 
-    execute ":normal ggdGa" . data
-    execute ":normal gg"
-    execute ":w! " . basedir . jsonobj.id
-	else
-  "write each entries to file"
-		for itm in jsonobj.items
-			let data = s:dumpEntry( itm )
-
-			execute ":normal ggdGa" . data
-			execute ":normal gg"
-			execute ":w! " . basedir . itm.id
-		endfor
-	endif
-
-  execute ":q!"
+  " execute ":q!"
   let &paste = l:pasteOption
 endfunction
 
