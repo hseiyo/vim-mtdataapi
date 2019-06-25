@@ -25,6 +25,9 @@ endif
 if !exists(":MtNew")
   command! -nargs=0 MtNew call mtdataapi#makeEmpty()
 endif
+if !exists(":MtSave")
+  command! -nargs=0 MtSave call mtdataapi#saveEntry()
+endif
 if !exists(":MtMDToHTML")
   command! -nargs=0 -range MtMDToHTML <line1>,<line2>call mtdataapi#markdownToHTML()
 endif
