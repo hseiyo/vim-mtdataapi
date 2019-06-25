@@ -114,7 +114,7 @@ function! s:dumpEntry( obj) abort
     let l:ret .=  "# " . k . " #\n"
     if k == "categories"
       for category in a:obj[k]
-        let l:ret .= category["id"] .. ":" .. category["label"] .. "\n"
+        let l:ret .= category["id"] . ":" . category["label"] . "\n"
       endfor
     elseif k == "tags"
       for tags in a:obj[k]
