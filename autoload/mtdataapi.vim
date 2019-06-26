@@ -164,11 +164,11 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
-" mtdataapi#openEntry( target , force )
+" mtdataapi#openEntry( target, ... )
 " open entry file.
 " if entry file does not exist, download it.
 
-function! mtdataapi#openEntry(target, force) abort
+function! mtdataapi#openEntry(target, ...) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -181,9 +181,10 @@ function! mtdataapi#openEntry(target, force) abort
     echohl ErrorMsg
     echoe "ERROR: in argument check"
     echohl Normal
+    return
   endif
 
-  if a:force || filereadable( basedir . l:eid ) == v:false
+  if a:0 == 1 && a:1 != v:false && filereadable( basedir . l:eid ) == v:false
     call mtdataapi#downloadSiteToFile( l:eid )
   endif
 
