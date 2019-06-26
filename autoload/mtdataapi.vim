@@ -184,7 +184,7 @@ function! mtdataapi#openEntry(target, ...) abort
     return
   endif
 
-  if a:0 == 1 && a:1 != v:false && filereadable( basedir . l:eid ) == v:false
+  if a:0 == 1 && a:1 != v:false || filereadable( basedir . l:eid ) == v:false
     call mtdataapi#downloadSiteToFile( l:eid )
   endif
 
