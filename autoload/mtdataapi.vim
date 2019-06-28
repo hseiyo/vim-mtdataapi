@@ -463,7 +463,7 @@ function! mtdataapi#downloadSiteToFile( target ) abort
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
-  let basedir=g:mt_basedir . "/" . siteid . "/"
+  let basedir=expand( g:mt_basedir . "/" . siteid . "/" )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
   let l:param = {"limit": "9999"}
 
