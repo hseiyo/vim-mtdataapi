@@ -471,7 +471,9 @@ function! mtdataapi#downloadSiteToFile( target ) abort
     let dataapiendpoint .= "/" . a:target
   endif
 
-  call mkdir( basedir, "p" , 0700)
+	if ! isdirectory( basedir )
+    call mkdir( basedir, "p" , 0700)
+	endif
 
   call s:updateAccessToken()
 
@@ -493,7 +495,7 @@ function! mtdataapi#downloadSiteToFile( target ) abort
 
   " execute ":new"
 
-  if type( a:target ) != 0 && expand("%") != target
+  if type( a:target ) != 0 && expand("%") != a:target
     "write siteid to .siteconfig in basedir"
     execute ":e " . basedir . ".siteconfig"
     execute ":normal ggdGa" . "let b:mt_siteid = " . siteid
