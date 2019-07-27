@@ -164,11 +164,10 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
-" mtdataapi#openEntry( target, ... )
-" open entry file.
-" if entry file does not exist, download it.
 
 function! mtdataapi#openEntry(target, ...) abort
+" open entry file with ID specified by a:target.
+" if entry file does not exist, download it.
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -184,7 +183,7 @@ function! mtdataapi#openEntry(target, ...) abort
     return
   endif
 
-  if a:0 == 1 && a:1 != v:false || filereadable( basedir . l:eid ) == v:false
+  if ( a:0 == 1 && a:1 != v:false ) || filereadable( basedir . l:eid ) == v:false
     call mtdataapi#downloadSiteToFile( l:eid )
   endif
 
@@ -460,6 +459,9 @@ function! mtdataapi#HTMLToMarkdown( ) range abort
 endfunction
 
 function! mtdataapi#downloadSiteToFile( target ) abort
+  "download the entry specified by ID which is specified by a:target
+  "if a:target is not numeric, all entries will be downloaded as many as
+  "l:param["limit"]
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
