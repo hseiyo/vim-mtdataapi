@@ -361,6 +361,11 @@ function! mtdataapi#updateBuffer( data ) abort
 endfunction
 
 function! mtdataapi#createEntry( ) abort
+  "Create a new entry on Movable Type with buffer
+  "
+  "Then, the new entry will be downloaded to a file.
+  "The buffer is updated by the file.
+
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"

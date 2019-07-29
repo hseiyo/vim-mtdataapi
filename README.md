@@ -7,28 +7,37 @@ This is vim plugin for Movable Type.
 # Commands
 There are several commands.
 
-- MtGet
-- MtEdit
+- MtOpen
+- MtVew
+- MtNew
 - MtCreate
+- MtSave
+- MtDownload
+- MtMDToHTML
+- MtHTMLToMD
 
 # Usage
-## MtGet
+## MtOpen
+-MtOpen <entry id>
+open a entry file.
+if specified file does not exist, the entry will be downloaded from Movable Type to a file.
 
--MtGet "latest"
+## MtView
+-MtView "latest"
 get the latest entry.
+This is similar to MtOpen, but MtView always download from Movable type althogh the entry file exists.
+And MtView does not open a file, so the downloaded data is in new buffer.
 
--MtGet <entry id>
+-MtView <entry id>
 get the entry specified id.
-Ex. Mtget 8
+Ex. MtView 8
 
--MtGet "recent"
+-MtView "recent"
 get the summary of recent 50 entries .
 
-## MtEdit
-Update entry which is already exists.
-Before edit, use MtGet "latest" or MtGet <entry id>.
-Next, you edit current buffer.
-Finally, execute MtEdit so that send the content of buffer to Movabe Type Server.
+## MtNew
+Open new buffer with skeleton for entry.
+If you want to upload the contents, use MtCreate.
 
 ## MtCreate
 Create new entry with the content of current buffer that is like followings:
@@ -39,6 +48,30 @@ Create new entry with the content of current buffer that is like followings:
     Draft Entry
     # body #
     Draft Body
+
+If success to upload, new entry is created and downloaded as a file.
+Then, open the file.
+
+## MtSave
+Update entry on Movable Type.
+Before edit, use MtOpen <entry id> or MtCreate.
+Next, you edit current buffer.
+Finally, execute MtSave.
+
+## MtDownload
+Download entries from Movable Type to local disk.
+
+-MtDownload <entry id>
+Download one entry to a file.
+
+-MtDownload
+Download all entry to files.( up to 9999 entries)
+
+## MtMDToHTML
+Convert visual selected text from Markdown to HTML
+
+## MtHTMLToMD
+Convert visual selected text from HTML to Markdown
 
 # Variables
 
@@ -57,3 +90,7 @@ Movable Type Login User. (ex. "username" )
 - g:mt_password
 
 Movable TYpe Web Service Password. (ex. "password" )
+
+- g:mt_basedir
+
+destination directory for download
