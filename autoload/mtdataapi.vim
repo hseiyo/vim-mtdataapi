@@ -346,8 +346,10 @@ function! s:readBuffer() abort
 endfunction
 
 function! mtdataapi#saveEntry( ) abort
-  " execute ":w"
-  call mtdataapi#editEntry()
+  "Write buffer to file and Movable Type
+
+  execute ":w"
+  call s:editEntry()
 endfunction
 
 function! mtdataapi#updateBuffer( data ) abort
@@ -393,7 +395,13 @@ function! mtdataapi#createEntry( ) abort
 
 endfunction
 
-function! mtdataapi#editEntry( ) abort
+function! s:editEntry( ) abort
+  "edit entry on Movable Type
+  "
+  "The entry on Movable Type is overwritten by contents in buffer.
+  "Then, the buffer will be overwritten by downloading from Movable Type. The
+  "difference is update time and some formats.
+
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -425,7 +433,7 @@ function! mtdataapi#editEntry( ) abort
   let res = s:http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
   if res.status != 200
     echohl ErrorMsg
-    echoe "got abnormal status code  by http request in s:mtdataapi#editEntry()\n got status: " . res.status . " with messages followings"
+    echoe "got abnormal status code  by http request in s:editEntry()\n got status: " . res.status . " with messages followings"
     echohl Normal
     return
   endif

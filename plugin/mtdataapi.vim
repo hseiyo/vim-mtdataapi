@@ -19,9 +19,6 @@ endif
 if !exists(":MtCreate")
   command! -nargs=0 MtCreate call mtdataapi#createEntry()
 endif
-if !exists(":MtEdit")
-  command! -nargs=0 MtEdit call mtdataapi#editEntry()
-endif
 if !exists(":MtNew")
   command! -nargs=0 MtNew call mtdataapi#makeEmpty()
 endif
