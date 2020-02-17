@@ -29,7 +29,7 @@ if !exists(":MtSave")
   command! -nargs=0 MtSave call mtdataapi#saveEntry()
 endif
 if !exists(":MtDownload")
-  command! -nargs=+ MtDownload call mtdataapi#openEntry(<args>)
+  command! -nargs=1 MtDownload call mtdataapi#downloadSiteToFile(<args>)
 endif
 if !exists(":MtMDToHTML")
   command! -nargs=0 -range MtMDToHTML <line1>,<line2>call mtdataapi#markdownToHTML()
