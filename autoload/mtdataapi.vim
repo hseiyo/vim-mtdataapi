@@ -164,11 +164,10 @@ function! s:dumpSummarySimple( obj ) abort
   return s:dumpSummary( s:summaryFields, a:obj )
 endfunction
 
-" mtdataapi#openEntry( target, ... )
-" open entry file.
-" if entry file does not exist, download it.
 
 function! mtdataapi#openEntry(target, ...) abort
+" open entry file with ID specified by a:target.
+" if entry file does not exist, download it.
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -184,7 +183,7 @@ function! mtdataapi#openEntry(target, ...) abort
     return
   endif
 
-  if a:0 == 1 && a:1 != v:false || filereadable( basedir . l:eid ) == v:false
+  if ( a:0 == 1 && a:1 != v:false ) || filereadable( basedir . l:eid ) == v:false
     call mtdataapi#downloadSiteToFile( l:eid )
   endif
 
@@ -347,8 +346,10 @@ function! s:readBuffer() abort
 endfunction
 
 function! mtdataapi#saveEntry( ) abort
-  " execute ":w"
-  call mtdataapi#editEntry()
+  "Write buffer to file and Movable Type
+
+  execute ":w"
+  call s:editEntry()
 endfunction
 
 function! mtdataapi#updateBuffer( data ) abort
@@ -360,6 +361,11 @@ function! mtdataapi#updateBuffer( data ) abort
 endfunction
 
 function! mtdataapi#createEntry( ) abort
+  "Create a new entry on Movable Type with buffer
+  "
+  "Then, the new entry will be downloaded to a file.
+  "The buffer is updated by the file.
+
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -394,7 +400,13 @@ function! mtdataapi#createEntry( ) abort
 
 endfunction
 
-function! mtdataapi#editEntry( ) abort
+function! s:editEntry( ) abort
+  "edit entry on Movable Type
+  "
+  "The entry on Movable Type is overwritten by contents in buffer.
+  "Then, the buffer will be overwritten by downloading from Movable Type. The
+  "difference is update time and some formats.
+
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
@@ -426,7 +438,7 @@ function! mtdataapi#editEntry( ) abort
   let res = s:http.request( { "url": dataapiurl . dataapiendpoint , "data": l:param , "headers": s:accessToken != "" ? { "X-MT-Authorization": "MTAuth accessToken=" . s:accessToken } : {} , "method": "PUT" } )
   if res.status != 200
     echohl ErrorMsg
-    echoe "got abnormal status code  by http request in s:mtdataapi#editEntry()\n got status: " . res.status . " with messages followings"
+    echoe "got abnormal status code  by http request in s:editEntry()\n got status: " . res.status . " with messages followings"
     echohl Normal
     return
   endif
@@ -460,6 +472,9 @@ function! mtdataapi#HTMLToMarkdown( ) range abort
 endfunction
 
 function! mtdataapi#downloadSiteToFile( target ) abort
+  "download the entry specified by ID which is specified by a:target
+  "if a:target is not numeric, all entries will be downloaded as many as
+  "l:param["limit"]
   set paste
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
