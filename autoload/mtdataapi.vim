@@ -171,7 +171,7 @@ function! mtdataapi#openEntry(target, ...) abort
   let siteid=get(b: , 'mt_siteid' , g:mt_siteid )
   let dataapiurl=get(b: , 'mt_dataapiurl' , g:mt_dataapiurl )
   let dataapiendpoint="/v4/sites/" . string(siteid) . "/entries"
-  let basedir=g:mt_basedir . "/" . siteid . "/"
+  let basedir=expand(g:mt_basedir . "/" . siteid . "/")
 
   " determin entry id to open
   if type( a:target ) == 0
